@@ -1,10 +1,12 @@
 # Stay_Booking
 
-StayBooking System
+StayBooking System is a platform that enables users to search, book, and manage accommodations easily while allowing administrators to manage listings and reservations. It focuses on providing a seamless booking experience with secure authentication and efficient booking management.
+
+##
 
 
-1️⃣ Business Model (Booking System Flow)
-StayBook is an online platform where:
+## 1️⃣ Business Model (Booking System Flow)
+### StayBook is an online platform where:
 Customers search hotels
 
 
@@ -26,7 +28,7 @@ Customer checks in/out
 Reviews are submitted
 
 
-Room (owner) manage:
+### Room (owner) manage:
 Room inventory
 
 
@@ -39,7 +41,7 @@ Availability
 Booking requests
 
 
-Admin manages:
+### Admin manages:
 Platform
 
 
@@ -51,8 +53,8 @@ Room Owner
 
 Reports
 
- 2️⃣ User Roles
-👤 Customer
+## 2️⃣ User Roles
+### 👤 Customer
 Register/login
 
 
@@ -71,7 +73,7 @@ Pay online
 Leave review
 
 
-🏨 Room Owner 
+### 🏨 Room Owner 
 Add rooms
 
 
@@ -84,7 +86,7 @@ Manage availability
 Confirm/reject bookings
 
 
-🛠 Admin
+### 🛠 Admin
 Approve vendors
 
 
@@ -100,7 +102,7 @@ Generate reports
 Handle disputes
 
 
-🗄 Basic ER Diagram (Conceptual)
+## 🗄 Basic ER Diagram (Conceptual)
 
 
 <img width="2110" height="1315" alt="StayBooking System" src="https://github.com/user-attachments/assets/a3d1a28a-b2b7-49b9-99d1-94ce0617ddd5" />
