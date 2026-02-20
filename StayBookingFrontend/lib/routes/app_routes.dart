@@ -1,0 +1,13 @@
+class AppRoutes {
+  static const String splash = '/';
+  static const String login = '/login';
+  static const String home = '/home';
+  static const String vendorHome = '/vendor-home';
+  static const String vendorAddRoom = '/vendor-add-room';
+  static const String register = '/register';
+  static const String forgotPassword = '/forgot-password';
+  static const String resetPassword = '/reset-password';
+
+  // Keep legacy alias for backend-provided hash URL: #/ForgotPasswordScreen
+  static const String forgotPasswordLegacy = '/ForgotPasswordScreen';
+}
