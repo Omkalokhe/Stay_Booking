@@ -11,7 +11,8 @@ import 'package:stay_booking_frontend/view/splashscreen.dart';
 import 'package:stay_booking_frontend/view/vendor/add_room_screen.dart';
 import 'package:stay_booking_frontend/view/vendor_home_screen.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -69,7 +70,7 @@ class MyApp extends StatelessWidget {
           name: AppRoutes.resetPassword,
           page: () => ResetPasswordScreen(),
         ),
-        // Supports backend-provided URL: .../#/ForgotPasswordScreen
+
         GetPage(
           name: AppRoutes.forgotPasswordLegacy,
           page: () => ForgotPasswordScreen(),

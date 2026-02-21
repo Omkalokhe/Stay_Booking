@@ -9,4 +9,3 @@ public class UpdateBookingStatusRequestDto {
     private BookingStatus bookingStatus;
     private PaymentStatus paymentStatus;
 }
-

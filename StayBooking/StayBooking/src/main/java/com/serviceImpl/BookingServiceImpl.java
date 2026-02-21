@@ -222,7 +222,6 @@ public class BookingServiceImpl implements BookingService {
         }
 
         Booking booking = optionalBooking.get();
-
         if (requestDto.getPaymentStatus() != null) {
             booking.setPaymentStatus(requestDto.getPaymentStatus());
             if (requestDto.getPaymentStatus() == PaymentStatus.SUCCESS && booking.getBookingStatus() == BookingStatus.PENDING) {
@@ -232,7 +231,6 @@ public class BookingServiceImpl implements BookingService {
                 booking.setBookingStatus(BookingStatus.CANCELLED);
             }
         }
-
         if (requestDto.getBookingStatus() != null) {
             BookingStatus nextStatus = requestDto.getBookingStatus();
             if (!isValidStatusTransition(booking.getBookingStatus(), nextStatus)) {
@@ -246,6 +244,7 @@ public class BookingServiceImpl implements BookingService {
         Booking updated = bookingRepository.save(booking);
         return ResponseEntity.ok(toResponse(updated));
     }
+
 
     @Override
     @Transactional
@@ -270,17 +269,6 @@ public class BookingServiceImpl implements BookingService {
 
         Booking updated = bookingRepository.save(booking);
         return ResponseEntity.ok(toResponse(updated));
-    }
-
-    @Override
-    @Transactional
-    public ResponseEntity<?> deleteBooking(int id) {
-        Optional<Booking> optionalBooking = bookingRepository.findById(id);
-        if (optionalBooking.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Booking not found with id: " + id);
-        }
-        bookingRepository.delete(optionalBooking.get());
-        return ResponseEntity.noContent().build();
     }
 
     private Specification<Booking> buildSpecification(Integer userId, Integer hotelId, Integer roomId,
@@ -379,9 +367,11 @@ public class BookingServiceImpl implements BookingService {
                 .totalAmount(booking.getTotalAmount())
                 .bookingStatus(booking.getBookingStatus())
                 .paymentStatus(booking.getPaymentStatus())
+                .paymentMethod(booking.getPaymentMethod())
+                .paymentReference(booking.getPaymentReference())
                 .createdAt(booking.getCreatedAt())
                 .updatedAt(booking.getUpdatedAt())
                 .build();
     }
-}
 
+}

@@ -10,10 +10,12 @@ import 'package:stay_booking_frontend/model/update_room_request_dto.dart';
 import 'package:stay_booking_frontend/service/room/room_service.dart';
 
 class VendorRoomController extends GetxController {
-  VendorRoomController({
-    required this.user,
-    RoomService? roomService,
-  }) : _roomService = roomService ?? RoomService();
+  static const int _maxPhotoCount = 6;
+  static const int _maxSinglePhotoBytes = 2 * 1024 * 1024;
+  static const int _maxTotalPhotoBytes = 8 * 1024 * 1024;
+
+  VendorRoomController({required this.user, RoomService? roomService})
+    : _roomService = roomService ?? RoomService();
 
   final Map<String, dynamic> user;
   final RoomService _roomService;
@@ -168,15 +170,69 @@ class VendorRoomController extends GetxController {
         .where(
           (file) =>
               (file.path ?? '').trim().isNotEmpty ||
-              ((file.bytes?.isNotEmpty ?? false) && file.name.trim().isNotEmpty),
+              ((file.bytes?.isNotEmpty ?? false) &&
+                  file.name.trim().isNotEmpty),
         )
         .toList(growable: false);
     if (picked.isEmpty) return;
 
     // Append new picks and skip duplicates so users can select in batches.
     final existingKeys = selectedPhotos.map(_photoKey).toSet();
-    final toAdd = picked.where((file) => !existingKeys.contains(_photoKey(file)));
-    selectedPhotos.addAll(toAdd);
+    final toAdd = picked.where(
+      (file) => !existingKeys.contains(_photoKey(file)),
+    );
+    final accepted = <PlatformFile>[];
+    var totalBytes = _selectedPhotosTotalBytes();
+    var count = selectedPhotos.length;
+
+    var rejectedByCount = 0;
+    var rejectedBySingleSize = 0;
+    var rejectedByTotalSize = 0;
+
+    for (final file in toAdd) {
+      final size = file.size;
+      if (count >= _maxPhotoCount) {
+        rejectedByCount += 1;
+        continue;
+      }
+      if (size <= 0) {
+        rejectedBySingleSize += 1;
+        continue;
+      }
+      if (size > _maxSinglePhotoBytes) {
+        rejectedBySingleSize += 1;
+        continue;
+      }
+      if (totalBytes + size > _maxTotalPhotoBytes) {
+        rejectedByTotalSize += 1;
+        continue;
+      }
+      accepted.add(file);
+      count += 1;
+      totalBytes += size;
+    }
+
+    if (accepted.isNotEmpty) {
+      selectedPhotos.addAll(accepted);
+    }
+
+    if (rejectedByCount > 0 ||
+        rejectedBySingleSize > 0 ||
+        rejectedByTotalSize > 0) {
+      final notes = <String>[
+        if (rejectedByCount > 0)
+          '$rejectedByCount skipped (max $_maxPhotoCount photos).',
+        if (rejectedBySingleSize > 0)
+          '$rejectedBySingleSize skipped (each must be <= ${_mb(_maxSinglePhotoBytes)} MB).',
+        if (rejectedByTotalSize > 0)
+          '$rejectedByTotalSize skipped (total must be <= ${_mb(_maxTotalPhotoBytes)} MB).',
+      ];
+      Get.snackbar(
+        'Some photos were skipped',
+        notes.join(' '),
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 
   void removePickedPhoto(PlatformFile file) {
@@ -214,6 +270,8 @@ class VendorRoomController extends GetxController {
       return false;
     }
 
+    if (!_validatePhotoPayload()) return false;
+
     final request = CreateRoomRequestDto(
       hotelId: hotelId,
       roomType: roomTypeController.text.trim(),
@@ -228,11 +286,19 @@ class VendorRoomController extends GetxController {
 
     final result = await _roomService.createRoom(request);
     if (!result.success) {
-      Get.snackbar('Error', result.message, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        result.message,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return false;
     }
 
-    Get.snackbar('Success', result.message, snackPosition: SnackPosition.BOTTOM);
+    Get.snackbar(
+      'Success',
+      result.message,
+      snackPosition: SnackPosition.BOTTOM,
+    );
     await fetchRooms();
     return true;
   }
@@ -247,6 +313,8 @@ class VendorRoomController extends GetxController {
       );
       return false;
     }
+
+    if (!_validatePhotoPayload()) return false;
 
     final request = UpdateRoomRequestDto(
       hotelId: hotelId,
@@ -263,11 +331,19 @@ class VendorRoomController extends GetxController {
 
     final result = await _roomService.updateRoom(id, request);
     if (!result.success) {
-      Get.snackbar('Error', result.message, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        result.message,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return false;
     }
 
-    Get.snackbar('Success', result.message, snackPosition: SnackPosition.BOTTOM);
+    Get.snackbar(
+      'Success',
+      result.message,
+      snackPosition: SnackPosition.BOTTOM,
+    );
     await fetchRooms();
     return true;
   }
@@ -275,9 +351,7 @@ class VendorRoomController extends GetxController {
   Future<void> deleteRoom(RoomResponseDto room) async {
     deletingRoomIds.add(room.id);
     try {
-      final result = await _roomService.deleteRoom(
-        room.id,
-      );
+      final result = await _roomService.deleteRoom(room.id);
       Get.snackbar(
         result.success ? 'Success' : 'Error',
         result.message,
@@ -369,5 +443,49 @@ class VendorRoomController extends GetxController {
   String _currentUserEmail() {
     final email = (user['email'] as String?)?.trim() ?? '';
     return email.isEmpty ? 'vendor@local' : email;
+  }
+
+  int _selectedPhotosTotalBytes() {
+    return selectedPhotos.fold<int>(0, (sum, file) => sum + file.size);
+  }
+
+  bool _validatePhotoPayload() {
+    if (selectedPhotos.length > _maxPhotoCount) {
+      Get.snackbar(
+        'Validation',
+        'Max $_maxPhotoCount photos allowed.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+
+    final tooLargeCount = selectedPhotos
+        .where((file) => file.size > _maxSinglePhotoBytes)
+        .length;
+    if (tooLargeCount > 0) {
+      Get.snackbar(
+        'Validation',
+        '$tooLargeCount photo(s) exceed ${_mb(_maxSinglePhotoBytes)} MB limit.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+
+    final totalBytes = _selectedPhotosTotalBytes();
+    if (totalBytes > _maxTotalPhotoBytes) {
+      Get.snackbar(
+        'Validation',
+        'Total photo size exceeds ${_mb(_maxTotalPhotoBytes)} MB.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  String _mb(int bytes) {
+    final value = bytes / (1024 * 1024);
+    return value.toStringAsFixed(value.truncateToDouble() == value ? 0 : 1);
   }
 }

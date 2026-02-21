@@ -1,6 +1,7 @@
 package com.entity;
 
 import com.enums.BookingStatus;
+import com.enums.PaymentMethod;
 import com.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -55,6 +56,13 @@ public class Booking {
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", nullable = false, length = 30)
     private PaymentStatus paymentStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", length = 40)
+    private PaymentMethod paymentMethod;
+
+    @Column(name = "payment_reference", length = 100)
+    private String paymentReference;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;

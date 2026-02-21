@@ -1,7 +1,8 @@
 class ApiEndpoints {
   static const String _baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:8080',
+    // defaultValue: 'http://localhost:8080',
+    defaultValue: "http://192.168.1.5:8080",
   );
 
   static Uri login() => Uri.parse('$_baseUrl/api/auth/login');
@@ -92,8 +93,7 @@ class ApiEndpoints {
         'size': '$size',
         'sortBy': sortBy,
         'direction': direction,
-        if ((hotelName ?? '').trim().isNotEmpty)
-          'hotelName': hotelName!.trim(),
+        if ((hotelName ?? '').trim().isNotEmpty) 'hotelName': hotelName!.trim(),
         if (available != null) 'available': '$available',
         if ((search ?? '').trim().isNotEmpty) 'search': search!.trim(),
       },
@@ -170,11 +170,9 @@ class ApiEndpoints {
   }
 
   static Uri adminDeleteHotel(int hotelId, {required String deletedBy}) {
-    return Uri.parse('$_baseUrl/api/admin/hotels/$hotelId').replace(
-      queryParameters: {
-        'deletedBy': deletedBy.trim(),
-      },
-    );
+    return Uri.parse(
+      '$_baseUrl/api/admin/hotels/$hotelId',
+    ).replace(queryParameters: {'deletedBy': deletedBy.trim()});
   }
 
   static Uri adminRooms({
@@ -192,8 +190,7 @@ class ApiEndpoints {
         'size': '$size',
         'sortBy': sortBy,
         'direction': direction,
-        if ((hotelName ?? '').trim().isNotEmpty)
-          'hotelName': hotelName!.trim(),
+        if ((hotelName ?? '').trim().isNotEmpty) 'hotelName': hotelName!.trim(),
         if (available != null) 'available': '$available',
         if ((search ?? '').trim().isNotEmpty) 'search': search!.trim(),
       },
@@ -236,8 +233,10 @@ class ApiEndpoints {
           'bookingStatus': bookingStatus!.trim().toUpperCase(),
         if ((paymentStatus ?? '').trim().isNotEmpty)
           'paymentStatus': paymentStatus!.trim().toUpperCase(),
-        if ((checkInFrom ?? '').trim().isNotEmpty) 'checkInFrom': checkInFrom!.trim(),
-        if ((checkOutTo ?? '').trim().isNotEmpty) 'checkOutTo': checkOutTo!.trim(),
+        if ((checkInFrom ?? '').trim().isNotEmpty)
+          'checkInFrom': checkInFrom!.trim(),
+        if ((checkOutTo ?? '').trim().isNotEmpty)
+          'checkOutTo': checkOutTo!.trim(),
       },
     );
   }
@@ -247,7 +246,12 @@ class ApiEndpoints {
   static Uri updateBookingStatus(int id) =>
       Uri.parse('$_baseUrl/api/bookings/$id/status');
 
-  static Uri cancelBooking(int id) => Uri.parse('$_baseUrl/api/bookings/$id/cancel');
+  static Uri cancelBooking(int id) =>
+      Uri.parse('$_baseUrl/api/bookings/$id/cancel');
 
-  static Uri deleteBooking(int id) => Uri.parse('$_baseUrl/api/bookings/$id');
+  static Uri createRazorpayOrder() =>
+      Uri.parse('$_baseUrl/api/payments/razorpay/orders');
+
+  static Uri verifyRazorpayPayment() =>
+      Uri.parse('$_baseUrl/api/payments/razorpay/verify');
 }

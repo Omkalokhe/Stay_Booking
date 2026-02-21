@@ -65,10 +65,4 @@ public class BookingController {
     public ResponseEntity<?> cancelBooking(@PathVariable int id) {
         return bookingService.cancelBooking(id);
     }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteBooking(@PathVariable int id) {
-        return bookingService.deleteBooking(id);
-    }
 }
-

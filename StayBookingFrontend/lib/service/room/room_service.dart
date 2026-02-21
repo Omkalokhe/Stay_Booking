@@ -100,7 +100,11 @@ class RoomService {
           ..fields['createdBy'] = request.createdBy;
 
     for (final file in request.photoFiles) {
-      final multipart = await _toMultipartFile(fileName: file.fileName, path: file.path, bytes: file.bytes);
+      final multipart = await _toMultipartFile(
+        fileName: file.fileName,
+        path: file.path,
+        bytes: file.bytes,
+      );
       if (multipart != null) {
         multipartRequest.files.add(multipart);
       }
@@ -129,7 +133,11 @@ class RoomService {
           ..fields['replacePhotos'] = '${request.replacePhotos}';
 
     for (final file in request.photoFiles) {
-      final multipart = await _toMultipartFile(fileName: file.fileName, path: file.path, bytes: file.bytes);
+      final multipart = await _toMultipartFile(
+        fileName: file.fileName,
+        path: file.path,
+        bytes: file.bytes,
+      );
       if (multipart != null) {
         multipartRequest.files.add(multipart);
       }
@@ -177,6 +185,15 @@ class RoomService {
       return HotelActionResult<RoomResponseDto>(
         success: true,
         message: _parser.extractMessage(decoded) ?? successMessage,
+        item: room,
+      );
+    }
+
+    if (response.statusCode == 413) {
+      return HotelActionResult<RoomResponseDto>(
+        success: false,
+        message:
+            'Upload is too large. Please use fewer/smaller photos (<= 2 MB each, <= 8 MB total).',
         item: room,
       );
     }
@@ -289,11 +306,7 @@ class RoomService {
     List<int>? bytes,
   }) async {
     if (bytes != null && bytes.isNotEmpty) {
-      return http.MultipartFile.fromBytes(
-        'photos',
-        bytes,
-        filename: fileName,
-      );
+      return http.MultipartFile.fromBytes('photos', bytes, filename: fileName);
     }
 
     final safePath = (path ?? '').trim();

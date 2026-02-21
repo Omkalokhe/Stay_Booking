@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:stay_booking_frontend/controller/booking/booking_controller.dart';
@@ -24,7 +23,8 @@ class _BookingTabState extends State<BookingTab> {
   @override
   void initState() {
     super.initState();
-    final tag = 'booking-${(widget.user['email'] as String?)?.trim() ?? 'user'}';
+    final tag =
+        'booking-${(widget.user['email'] as String?)?.trim() ?? 'user'}';
     _controller = Get.isRegistered<BookingController>(tag: tag)
         ? Get.find<BookingController>(tag: tag)
         : Get.put(BookingController(currentUser: widget.user), tag: tag);
@@ -42,7 +42,7 @@ class _BookingTabState extends State<BookingTab> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF3E1E86),
         foregroundColor: Colors.white,
-        titleSpacing: 12,
+        titleSpacing: 15,
         title: _buildSearchBar(),
         actions: [
           IconButton(
@@ -59,8 +59,12 @@ class _BookingTabState extends State<BookingTab> {
           if (_controller.isLoading.value && _controller.items.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (_controller.errorMessage.value.isNotEmpty && _controller.items.isEmpty) {
-            return _ErrorState(message: _controller.errorMessage.value, onRetry: _controller.loadFirstPage);
+          if (_controller.errorMessage.value.isNotEmpty &&
+              _controller.items.isEmpty) {
+            return _ErrorState(
+              message: _controller.errorMessage.value,
+              onRetry: _controller.loadFirstPage,
+            );
           }
 
           return LayoutBuilder(
@@ -70,15 +74,19 @@ class _BookingTabState extends State<BookingTab> {
                 padding: _contentPadding(constraints.maxWidth),
                 children: [
                   if (_controller.isEmpty)
-                    const _EmptyState(message: 'No bookings found for selected filters.')
+                    const _EmptyState(
+                      message: 'No bookings found for selected filters.',
+                    )
                   else if (isWide)
                     _BookingsTable(
                       items: _controller.items,
                       onView: _openBookingDetails,
                       onEdit: _openUpdateBookingSheet,
-                      onStatus: _canUpdateStatus ? _openStatusUpdateSheet : null,
+                      onStatus: _canUpdateStatus
+                          ? _openStatusUpdateSheet
+                          : null,
+                      onPay: _openPayBookingSheet,
                       onCancel: _controller.cancelBooking,
-                      onDelete: _controller.deleteBooking,
                     )
                   else
                     ..._controller.items.map(_buildBookingCard),
@@ -94,22 +102,25 @@ class _BookingTabState extends State<BookingTab> {
   }
 
   Widget _buildSearchBar() {
-    return TextField(
-      controller: _searchController,
-      textInputAction: TextInputAction.search,
-      onSubmitted: _controller.applySearch,
-      decoration: InputDecoration(
-        hintText: 'Search bookings',
-        filled: true,
-        fillColor: const Color(0xFFE7E5EC),
-        prefixIcon: const Icon(Icons.search, color: Color(0xFF595761)),
-        suffixIcon: IconButton(
-          onPressed: () => _controller.applySearch(_searchController.text),
-          icon: const Icon(Icons.arrow_forward, color: Color(0xFF595761)),
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
+    return SizedBox(
+      height: 45,
+      child: TextField(
+        controller: _searchController,
+        textInputAction: TextInputAction.search,
+        onSubmitted: _controller.applySearch,
+        decoration: InputDecoration(
+          hintText: 'Search bookings',
+          filled: true,
+          fillColor: const Color(0xFFE7E5EC),
+          prefixIcon: const Icon(Icons.search, color: Color(0xFF595761)),
+          suffixIcon: IconButton(
+            onPressed: () => _controller.applySearch(_searchController.text),
+            icon: const Icon(Icons.arrow_forward, color: Color(0xFF595761)),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide.none,
+          ),
         ),
       ),
     );
@@ -135,7 +146,12 @@ class _BookingTabState extends State<BookingTab> {
             final rooms = _controller.roomsForHotel(hotelId);
             return SafeArea(
               child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(context).viewInsets.bottom),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  16 + MediaQuery.of(context).viewInsets.bottom,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -143,40 +159,79 @@ class _BookingTabState extends State<BookingTab> {
                       initialValue: hotelId,
                       decoration: const InputDecoration(labelText: 'Hotel'),
                       items: [
-                        const DropdownMenuItem<int?>(value: null, child: Text('All Hotels')),
-                        ..._controller.hotels.map((h) => DropdownMenuItem<int?>(value: h.id, child: Text(h.name))),
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text('All Hotels'),
+                        ),
+                        ..._controller.hotels.map(
+                          (h) => DropdownMenuItem<int?>(
+                            value: h.id,
+                            child: Text(h.name),
+                          ),
+                        ),
                       ],
-                      onChanged: (value) => setModalState(() => hotelId = value),
+                      onChanged: (value) =>
+                          setModalState(() => hotelId = value),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int?>(
                       initialValue: roomId,
                       decoration: const InputDecoration(labelText: 'Room'),
                       items: [
-                        const DropdownMenuItem<int?>(value: null, child: Text('All Rooms')),
-                        ...rooms.map((r) => DropdownMenuItem<int?>(value: r.id, child: Text('${r.roomType} (${r.hotelName})'))),
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text('All Rooms'),
+                        ),
+                        ...rooms.map(
+                          (r) => DropdownMenuItem<int?>(
+                            value: r.id,
+                            child: Text('${r.roomType} (${r.hotelName})'),
+                          ),
+                        ),
                       ],
                       onChanged: (value) => setModalState(() => roomId = value),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String?>(
                       initialValue: bookingStatus,
-                      decoration: const InputDecoration(labelText: 'Booking Status'),
+                      decoration: const InputDecoration(
+                        labelText: 'Booking Status',
+                      ),
                       items: [
-                        const DropdownMenuItem<String?>(value: null, child: Text('All Booking Status')),
-                        ...BookingController.bookingStatuses.map((e) => DropdownMenuItem<String?>(value: e, child: Text(e))),
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('All Booking Status'),
+                        ),
+                        ...BookingController.bookingStatuses.map(
+                          (e) => DropdownMenuItem<String?>(
+                            value: e,
+                            child: Text(e),
+                          ),
+                        ),
                       ],
-                      onChanged: (value) => setModalState(() => bookingStatus = value),
+                      onChanged: (value) =>
+                          setModalState(() => bookingStatus = value),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String?>(
                       initialValue: paymentStatus,
-                      decoration: const InputDecoration(labelText: 'Payment Status'),
+                      decoration: const InputDecoration(
+                        labelText: 'Payment Status',
+                      ),
                       items: [
-                        const DropdownMenuItem<String?>(value: null, child: Text('All Payment Status')),
-                        ...BookingController.paymentStatuses.map((e) => DropdownMenuItem<String?>(value: e, child: Text(e))),
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('All Payment Status'),
+                        ),
+                        ...BookingController.paymentStatuses.map(
+                          (e) => DropdownMenuItem<String?>(
+                            value: e,
+                            child: Text(e),
+                          ),
+                        ),
                       ],
-                      onChanged: (value) => setModalState(() => paymentStatus = value),
+                      onChanged: (value) =>
+                          setModalState(() => paymentStatus = value),
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -189,7 +244,11 @@ class _BookingTabState extends State<BookingTab> {
                               setModalState(() => checkInFrom = picked);
                             },
                             icon: const Icon(Icons.date_range),
-                            label: Text(checkInFrom == null ? 'CheckIn From' : _dateOnly(checkInFrom!)),
+                            label: Text(
+                              checkInFrom == null
+                                  ? 'CheckIn From'
+                                  : _dateOnly(checkInFrom!),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -201,7 +260,11 @@ class _BookingTabState extends State<BookingTab> {
                               setModalState(() => checkOutTo = picked);
                             },
                             icon: const Icon(Icons.date_range),
-                            label: Text(checkOutTo == null ? 'CheckOut To' : _dateOnly(checkOutTo!)),
+                            label: Text(
+                              checkOutTo == null
+                                  ? 'CheckOut To'
+                                  : _dateOnly(checkOutTo!),
+                            ),
                           ),
                         ),
                       ],
@@ -210,18 +273,30 @@ class _BookingTabState extends State<BookingTab> {
                     DropdownButtonFormField<String>(
                       initialValue: sortBy,
                       decoration: const InputDecoration(labelText: 'Sort By'),
-                      items: BookingController.sortOptions.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(growable: false),
-                      onChanged: (v) => setModalState(() => sortBy = v ?? 'updatedat'),
+                      items: BookingController.sortOptions
+                          .map(
+                            (e) => DropdownMenuItem(value: e, child: Text(e)),
+                          )
+                          .toList(growable: false),
+                      onChanged: (v) =>
+                          setModalState(() => sortBy = v ?? 'updatedat'),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: direction,
                       decoration: const InputDecoration(labelText: 'Direction'),
                       items: const [
-                        DropdownMenuItem(value: 'asc', child: Text('Ascending')),
-                        DropdownMenuItem(value: 'desc', child: Text('Descending')),
+                        DropdownMenuItem(
+                          value: 'asc',
+                          child: Text('Ascending'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'desc',
+                          child: Text('Descending'),
+                        ),
                       ],
-                      onChanged: (v) => setModalState(() => direction = v ?? 'desc'),
+                      onChanged: (v) =>
+                          setModalState(() => direction = v ?? 'desc'),
                     ),
                     const SizedBox(height: 14),
                     Row(
@@ -243,8 +318,12 @@ class _BookingTabState extends State<BookingTab> {
                               Navigator.of(context).pop();
                               await _controller.setHotelFilter(hotelId);
                               await _controller.setRoomFilter(roomId);
-                              await _controller.setBookingStatusFilter(bookingStatus);
-                              await _controller.setPaymentStatusFilter(paymentStatus);
+                              await _controller.setBookingStatusFilter(
+                                bookingStatus,
+                              );
+                              await _controller.setPaymentStatusFilter(
+                                paymentStatus,
+                              );
                               await _controller.setCheckInFrom(checkInFrom);
                               await _controller.setCheckOutTo(checkOutTo);
                               await _controller.setSort(sortBy);
@@ -268,7 +347,9 @@ class _BookingTabState extends State<BookingTab> {
   Future<void> _openUpdateBookingSheet(BookingResponseDto booking) async {
     DateTime? checkInDate = _parseDate(booking.checkInDate);
     DateTime? checkOutDate = _parseDate(booking.checkOutDate);
-    final guestsController = TextEditingController(text: '${booking.numberOfGuests}');
+    final guestsController = TextEditingController(
+      text: '${booking.numberOfGuests}',
+    );
 
     await showModalBottomSheet<void>(
       context: context,
@@ -279,11 +360,19 @@ class _BookingTabState extends State<BookingTab> {
           builder: (context, setModalState) {
             return SafeArea(
               child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(context).viewInsets.bottom),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  16 + MediaQuery.of(context).viewInsets.bottom,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Update Booking #${booking.id}', style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      'Update Booking #${booking.id}',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -294,7 +383,11 @@ class _BookingTabState extends State<BookingTab> {
                               if (picked == null) return;
                               setModalState(() => checkInDate = picked);
                             },
-                            child: Text(checkInDate == null ? 'Check-In Date' : _dateOnly(checkInDate!)),
+                            child: Text(
+                              checkInDate == null
+                                  ? 'Check-In Date'
+                                  : _dateOnly(checkInDate!),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -305,7 +398,11 @@ class _BookingTabState extends State<BookingTab> {
                               if (picked == null) return;
                               setModalState(() => checkOutDate = picked);
                             },
-                            child: Text(checkOutDate == null ? 'Check-Out Date' : _dateOnly(checkOutDate!)),
+                            child: Text(
+                              checkOutDate == null
+                                  ? 'Check-Out Date'
+                                  : _dateOnly(checkOutDate!),
+                            ),
                           ),
                         ),
                       ],
@@ -314,7 +411,9 @@ class _BookingTabState extends State<BookingTab> {
                     TextField(
                       controller: guestsController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Number of Guests'),
+                      decoration: const InputDecoration(
+                        labelText: 'Number of Guests',
+                      ),
                     ),
                     const SizedBox(height: 14),
                     SizedBox(
@@ -324,29 +423,49 @@ class _BookingTabState extends State<BookingTab> {
                           onPressed: _controller.isSubmitting.value
                               ? null
                               : () async {
-                                  if (checkInDate == null || checkOutDate == null) {
-                                    Get.snackbar('Validation', 'Please select check-in and check-out dates.');
+                                  if (checkInDate == null ||
+                                      checkOutDate == null) {
+                                    Get.snackbar(
+                                      'Validation',
+                                      'Please select check-in and check-out dates.',
+                                    );
                                     return;
                                   }
-                                  final guests = int.tryParse(guestsController.text.trim()) ?? 0;
+                                  final guests =
+                                      int.tryParse(
+                                        guestsController.text.trim(),
+                                      ) ??
+                                      0;
                                   if (guests <= 0) {
-                                    Get.snackbar('Validation', 'Guests must be greater than 0.');
+                                    Get.snackbar(
+                                      'Validation',
+                                      'Guests must be greater than 0.',
+                                    );
                                     return;
                                   }
-                                  final result = await _controller.updateBooking(
-                                    booking.id,
-                                    UpdateBookingRequestDto(
-                                      checkInDate: _dateOnly(checkInDate!),
-                                      checkOutDate: _dateOnly(checkOutDate!),
-                                      numberOfGuests: guests,
-                                    ),
-                                  );
+                                  final result = await _controller
+                                      .updateBooking(
+                                        booking.id,
+                                        UpdateBookingRequestDto(
+                                          checkInDate: _dateOnly(checkInDate!),
+                                          checkOutDate: _dateOnly(
+                                            checkOutDate!,
+                                          ),
+                                          numberOfGuests: guests,
+                                        ),
+                                      );
                                   if (result != null && context.mounted) {
                                     Navigator.of(context).pop();
                                   }
                                 },
                           child: _controller.isSubmitting.value
-                              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
                               : const Text('Update Booking'),
                         ),
                       ),
@@ -384,26 +503,51 @@ class _BookingTabState extends State<BookingTab> {
           builder: (context, setModalState) {
             return SafeArea(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(context).viewInsets.bottom),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  16 + MediaQuery.of(context).viewInsets.bottom,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     DropdownButtonFormField<String?>(
                       initialValue: bookingStatus,
-                      decoration: const InputDecoration(labelText: 'Booking Status'),
+                      decoration: const InputDecoration(
+                        labelText: 'Booking Status',
+                      ),
                       items: [
-                        const DropdownMenuItem<String?>(value: null, child: Text('No Change')),
-                        ...BookingController.bookingStatuses.map((e) => DropdownMenuItem<String?>(value: e, child: Text(e))),
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('No Change'),
+                        ),
+                        ...BookingController.bookingStatuses.map(
+                          (e) => DropdownMenuItem<String?>(
+                            value: e,
+                            child: Text(e),
+                          ),
+                        ),
                       ],
                       onChanged: (v) => setModalState(() => bookingStatus = v),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String?>(
                       initialValue: paymentStatus,
-                      decoration: const InputDecoration(labelText: 'Payment Status'),
+                      decoration: const InputDecoration(
+                        labelText: 'Payment Status',
+                      ),
                       items: [
-                        const DropdownMenuItem<String?>(value: null, child: Text('No Change')),
-                        ...BookingController.paymentStatuses.map((e) => DropdownMenuItem<String?>(value: e, child: Text(e))),
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('No Change'),
+                        ),
+                        ...BookingController.paymentStatuses.map(
+                          (e) => DropdownMenuItem<String?>(
+                            value: e,
+                            child: Text(e),
+                          ),
+                        ),
                       ],
                       onChanged: (v) => setModalState(() => paymentStatus = v),
                     ),
@@ -427,7 +571,13 @@ class _BookingTabState extends State<BookingTab> {
                                   }
                                 },
                           child: _controller.isSubmitting.value
-                              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
                               : const Text('Update Status'),
                         ),
                       ),
@@ -437,6 +587,129 @@ class _BookingTabState extends State<BookingTab> {
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  bool _canPayBooking(BookingResponseDto booking) {
+    final bookingStatus = booking.bookingStatus.trim().toUpperCase();
+    final paymentStatus = booking.paymentStatus.trim().toUpperCase();
+    const blockedBookingStatuses = {'CANCELLED', 'COMPLETED', 'NO_SHOW'};
+    const payablePaymentStatuses = {'PENDING', 'FAILED'};
+    return !blockedBookingStatuses.contains(bookingStatus) &&
+        payablePaymentStatuses.contains(paymentStatus);
+  }
+
+  Future<void> _openPayBookingSheet(BookingResponseDto booking) async {
+    if (!_canPayBooking(booking)) {
+      return;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              8,
+              16,
+              16 + MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Complete Payment',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Secure checkout powered by Razorpay (UPI, cards, net banking, wallets).',
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4F2FA),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        booking.hotelName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${booking.roomType} | ${booking.checkInDate} to ${booking.checkOutDate}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.black54),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          const Text(
+                            'Amount',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          const Spacer(),
+                          Text(
+                            'Rs ${booking.totalAmount.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: Obx(
+                    () => FilledButton.icon(
+                      onPressed: _controller.isSubmitting.value
+                          ? null
+                          : () async {
+                              final success = await _controller
+                                  .payBookingWithRazorpay(booking);
+                              if (success && context.mounted) {
+                                Navigator.of(context).pop();
+                              }
+                            },
+                      icon: _controller.isSubmitting.value
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.payments_outlined),
+                      label: Text(
+                        _controller.isSubmitting.value
+                            ? 'Processing...'
+                            : 'Pay with Razorpay',
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
@@ -459,7 +732,12 @@ class _BookingTabState extends State<BookingTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Booking #${data.id}', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                  Text(
+                    'Booking Details',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   _kv('User', data.userEmail),
                   _kv('Hotel', data.hotelName),
@@ -467,7 +745,10 @@ class _BookingTabState extends State<BookingTab> {
                   _kv('Check-In', data.checkInDate),
                   _kv('Check-Out', data.checkOutDate),
                   _kv('Guests', '${data.numberOfGuests}'),
-                  _kv('Total Amount', 'Rs ${data.totalAmount.toStringAsFixed(2)}'),
+                  _kv(
+                    'Total Amount',
+                    'Rs ${data.totalAmount.toStringAsFixed(2)}',
+                  ),
                   _kv('Booking Status', data.bookingStatus),
                   _kv('Payment Status', data.paymentStatus),
                   _kv('Created', data.createdAt),
@@ -487,27 +768,121 @@ class _BookingTabState extends State<BookingTab> {
       const PopupMenuItem(value: 'edit', child: Text('Edit')),
       if (_canUpdateStatus)
         const PopupMenuItem(value: 'status', child: Text('Update Status')),
+      if (_canPayBooking(booking))
+        const PopupMenuItem(value: 'pay', child: Text('Pay Now')),
       const PopupMenuItem(value: 'cancel', child: Text('Cancel')),
-      const PopupMenuItem(value: 'delete', child: Text('Delete')),
     ];
 
     return Card(
-      child: ListTile(
-        title: Text('${booking.hotelName} - ${booking.roomType}'),
-        subtitle: Text('${booking.checkInDate} to ${booking.checkOutDate}\nBooking: ${booking.bookingStatus} | Payment: ${booking.paymentStatus}'),
-        isThreeLine: true,
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) async {
-            if (value == 'view') await _openBookingDetails(booking);
-            if (value == 'edit') await _openUpdateBookingSheet(booking);
-            if (value == 'status' && _canUpdateStatus) {
-              await _openStatusUpdateSheet(booking);
-            }
-            if (value == 'cancel') await _controller.cancelBooking(booking);
-            if (value == 'delete') await _controller.deleteBooking(booking);
-          },
-          itemBuilder: (context) => menuItems,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 8, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        booking.hotelName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        booking.roomType,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert),
+                  tooltip: 'More',
+                  onSelected: (value) async {
+                    if (value == 'view') await _openBookingDetails(booking);
+                    if (value == 'edit') await _openUpdateBookingSheet(booking);
+                    if (value == 'status' && _canUpdateStatus) {
+                      await _openStatusUpdateSheet(booking);
+                    }
+                    if (value == 'pay') {
+                      await _openPayBookingSheet(booking);
+                    }
+                    if (value == 'cancel') {
+                      await _controller.cancelBooking(booking);
+                    }
+                  },
+                  itemBuilder: (context) => menuItems,
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${booking.checkInDate} to ${booking.checkOutDate}',
+              style: const TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Guests: ${booking.numberOfGuests}',
+                    style: const TextStyle(color: Colors.black87),
+                  ),
+                ),
+                Text(
+                  'Rs ${booking.totalAmount.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _statusChip(
+                  label: 'Booking: ${booking.bookingStatus}',
+                  isPositive:
+                      booking.bookingStatus.trim().toUpperCase() == 'CONFIRMED',
+                ),
+                _statusChip(
+                  label: 'Payment: ${booking.paymentStatus}',
+                  isPositive:
+                      booking.paymentStatus.trim().toUpperCase() == 'SUCCESS',
+                ),
+              ],
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _statusChip({required String label, required bool isPositive}) {
+    final bg = isPositive ? const Color(0xFFDFF6E4) : const Color(0xFFF4F2FA);
+    final fg = isPositive ? const Color(0xFF1B7D39) : const Color(0xFF4A4458);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 12),
       ),
     );
   }
@@ -518,7 +893,13 @@ class _BookingTabState extends State<BookingTab> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 120, child: Text('$key:', style: const TextStyle(fontWeight: FontWeight.w700))),
+          SizedBox(
+            width: 120,
+            child: Text(
+              '$key:',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
           Expanded(child: Text(value)),
         ],
       ),
@@ -549,26 +930,31 @@ class _BookingTabState extends State<BookingTab> {
   }
 
   EdgeInsets _contentPadding(double width) {
-    final horizontal = width >= 1200 ? 32.0 : width >= 900 ? 24.0 : 16.0;
+    final horizontal = width >= 1200
+        ? 32.0
+        : width >= 900
+        ? 24.0
+        : 16.0;
     return EdgeInsets.fromLTRB(horizontal, 16, horizontal, 24);
   }
 }
+
 class _BookingsTable extends StatelessWidget {
   const _BookingsTable({
     required this.items,
     required this.onView,
     required this.onEdit,
     required this.onStatus,
+    required this.onPay,
     required this.onCancel,
-    required this.onDelete,
   });
 
   final List<BookingResponseDto> items;
   final ValueChanged<BookingResponseDto> onView;
   final ValueChanged<BookingResponseDto> onEdit;
   final ValueChanged<BookingResponseDto>? onStatus;
+  final ValueChanged<BookingResponseDto>? onPay;
   final ValueChanged<BookingResponseDto> onCancel;
-  final ValueChanged<BookingResponseDto> onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -602,16 +988,33 @@ class _BookingsTable extends StatelessWidget {
                     Wrap(
                       spacing: 6,
                       children: [
-                        IconButton(icon: const Icon(Icons.visibility_outlined), onPressed: () => onView(b), tooltip: 'View'),
-                        IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => onEdit(b), tooltip: 'Edit'),
+                        IconButton(
+                          icon: const Icon(Icons.visibility_outlined),
+                          onPressed: () => onView(b),
+                          tooltip: 'View',
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined),
+                          onPressed: () => onEdit(b),
+                          tooltip: 'Edit',
+                        ),
                         if (onStatus != null)
                           IconButton(
                             icon: const Icon(Icons.swap_horiz_outlined),
                             onPressed: () => onStatus!(b),
                             tooltip: 'Status',
                           ),
-                        IconButton(icon: const Icon(Icons.cancel_outlined), onPressed: () => onCancel(b), tooltip: 'Cancel'),
-                        IconButton(icon: const Icon(Icons.delete_outline), onPressed: () => onDelete(b), tooltip: 'Delete'),
+                        if (onPay != null && _canPayBookingRow(b))
+                          IconButton(
+                            icon: const Icon(Icons.payments_outlined),
+                            onPressed: () => onPay!(b),
+                            tooltip: 'Pay Now',
+                          ),
+                        IconButton(
+                          icon: const Icon(Icons.cancel_outlined),
+                          onPressed: () => onCancel(b),
+                          tooltip: 'Cancel',
+                        ),
                       ],
                     ),
                   ),
@@ -621,6 +1024,15 @@ class _BookingsTable extends StatelessWidget {
             .toList(growable: false),
       ),
     );
+  }
+
+  bool _canPayBookingRow(BookingResponseDto booking) {
+    final bookingStatus = booking.bookingStatus.trim().toUpperCase();
+    final paymentStatus = booking.paymentStatus.trim().toUpperCase();
+    const blockedBookingStatuses = {'CANCELLED', 'COMPLETED', 'NO_SHOW'};
+    const payablePaymentStatuses = {'PENDING', 'FAILED'};
+    return !blockedBookingStatuses.contains(bookingStatus) &&
+        payablePaymentStatuses.contains(paymentStatus);
   }
 }
 
@@ -633,14 +1045,20 @@ class _PaginationBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text('Total: ${controller.totalElements.value} | Page ${controller.page.value + 1}/${controller.totalPages.value}'),
+        Text(
+          'Total: ${controller.totalElements.value} | Page ${controller.page.value + 1}/${controller.totalPages.value}',
+        ),
         const Spacer(),
         IconButton(
-          onPressed: controller.isFirstPage.value ? null : controller.goToPreviousPage,
+          onPressed: controller.isFirstPage.value
+              ? null
+              : controller.goToPreviousPage,
           icon: const Icon(Icons.chevron_left),
         ),
         IconButton(
-          onPressed: controller.isLastPage.value ? null : controller.goToNextPage,
+          onPressed: controller.isLastPage.value
+              ? null
+              : controller.goToNextPage,
           icon: const Icon(Icons.chevron_right),
         ),
       ],

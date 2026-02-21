@@ -11,34 +11,51 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 @Entity
-@Table(name = "payments", indexes = {
+@Table(name = "payment_transactions", indexes = {
         @Index(name = "idx_payment_booking_id", columnList = "booking_id"),
-        @Index(name = "idx_payment_status", columnList = "payment_status")
+        @Index(name = "idx_payment_provider_order_id", columnList = "provider_order_id", unique = true),
+        @Index(name = "idx_payment_provider_payment_id", columnList = "provider_payment_id")
 })
 @Data
 @NoArgsConstructor
-public class Payment {
+public class PaymentTransaction {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "booking_id", nullable = false)
     private Booking booking;
 
-    @Column(name = "amount", nullable = false, precision = 10, scale = 2)
-    private BigDecimal amount;
-
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_method", nullable = false, length = 30)
+    @Column(name = "payment_method", nullable = false, length = 40)
     private PaymentMethod paymentMethod;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", nullable = false, length = 30)
     private PaymentStatus paymentStatus;
 
-    @Column(name = "transaction_id", length = 100)
-    private String transactionId;
+    @Column(name = "amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal amount;
+
+    @Column(name = "currency", nullable = false, length = 10)
+    private String currency;
+
+    @Column(name = "provider_order_id", nullable = false, unique = true, length = 80)
+    private String providerOrderId;
+
+    @Column(name = "provider_payment_id", length = 80)
+    private String providerPaymentId;
+
+    @Column(name = "provider_signature", length = 255)
+    private String providerSignature;
+
+    @Column(name = "error_code", length = 80)
+    private String errorCode;
+
+    @Column(name = "error_description", length = 500)
+    private String errorDescription;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
@@ -54,9 +71,6 @@ public class Payment {
         }
         if (updatedAt == null) {
             updatedAt = now;
-        }
-        if (paymentStatus == null) {
-            paymentStatus = PaymentStatus.PENDING;
         }
     }
 

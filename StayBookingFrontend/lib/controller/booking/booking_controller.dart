@@ -1,13 +1,23 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:flutter/services.dart';
 import 'package:stay_booking_frontend/model/booking_response_dto.dart';
 import 'package:stay_booking_frontend/model/create_booking_request_dto.dart';
 import 'package:stay_booking_frontend/model/hotel_response_dto.dart';
+import 'package:stay_booking_frontend/model/razorpay_order_request_dto.dart';
+import 'package:stay_booking_frontend/model/razorpay_order_response_dto.dart';
+import 'package:stay_booking_frontend/model/razorpay_verify_request_dto.dart';
+import 'package:stay_booking_frontend/model/razorpay_verify_response_dto.dart';
 import 'package:stay_booking_frontend/model/room_response_dto.dart';
 import 'package:stay_booking_frontend/model/update_booking_request_dto.dart';
 import 'package:stay_booking_frontend/model/update_booking_status_request_dto.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:stay_booking_frontend/service/booking/booking_service.dart';
 import 'package:stay_booking_frontend/service/hotel/hotel_service.dart';
 import 'package:stay_booking_frontend/service/room/room_service.dart';
+import 'package:stay_booking_frontend/service/user/user_profile_service.dart';
 
 class BookingController extends GetxController {
   BookingController({
@@ -15,14 +25,26 @@ class BookingController extends GetxController {
     BookingService? bookingService,
     HotelService? hotelService,
     RoomService? roomService,
+    UserProfileService? userProfileService,
   }) : _bookingService = bookingService ?? BookingService(),
        _hotelService = hotelService ?? HotelService(),
-       _roomService = roomService ?? RoomService();
+       _roomService = roomService ?? RoomService(),
+       _userProfileService = userProfileService ?? UserProfileService();
 
   final Map<String, dynamic> currentUser;
   final BookingService _bookingService;
   final HotelService _hotelService;
   final RoomService _roomService;
+  final UserProfileService _userProfileService;
+  final Razorpay _razorpay = Razorpay();
+  static const MethodChannel _razorpayChannel = MethodChannel(
+    'razorpay_flutter',
+  );
+  static const String _fallbackRazorpayKeyId = 'rzp_test_SIlc3ejkMvjn2O';
+
+  Completer<RazorpayVerifyResponseDto?>? _paymentCompleter;
+  int? _activeRazorpayBookingId;
+  String _activeRazorpayOrderId = '';
 
   final items = <BookingResponseDto>[].obs;
   final hotels = <HotelResponseDto>[].obs;
@@ -97,7 +119,8 @@ class BookingController extends GetxController {
 
   bool get canUpdateBookingAndPaymentStatus => currentUserRole == 'VENDOR';
 
-  bool get isEmpty => !isLoading.value && errorMessage.value.isEmpty && items.isEmpty;
+  bool get isEmpty =>
+      !isLoading.value && errorMessage.value.isEmpty && items.isEmpty;
 
   List<RoomResponseDto> roomsForHotel(int? hotelId) {
     if (hotelId == null) return rooms;
@@ -107,8 +130,17 @@ class BookingController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handleRazorpaySuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handleRazorpayError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
     loadReferenceData();
     loadFirstPage();
+  }
+
+  @override
+  void onClose() {
+    _razorpay.clear();
+    super.onClose();
   }
 
   Future<void> loadReferenceData() async {
@@ -231,17 +263,34 @@ class BookingController extends GetxController {
     await applySearch('');
   }
 
-  Future<BookingResponseDto?> createBooking(CreateBookingRequestDto request) async {
+  Future<BookingResponseDto?> createBooking(
+    CreateBookingRequestDto request,
+  ) async {
     isSubmitting.value = true;
     try {
       final result = await _bookingService.createBooking(request);
       if (!result.success) {
-        Get.snackbar('Error', result.message, snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar(
+          'Error',
+          result.message,
+          snackPosition: SnackPosition.BOTTOM,
+        );
         return null;
       }
       await loadFirstPage(showLoader: false);
-      Get.snackbar('Success', result.message, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Success',
+        result.message,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return result.item;
+    } catch (_) {
+      Get.snackbar(
+        'Error',
+        'Unable to create booking right now. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return null;
     } finally {
       isSubmitting.value = false;
     }
@@ -255,11 +304,19 @@ class BookingController extends GetxController {
     try {
       final result = await _bookingService.updateBooking(id, request);
       if (!result.success) {
-        Get.snackbar('Error', result.message, snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar(
+          'Error',
+          result.message,
+          snackPosition: SnackPosition.BOTTOM,
+        );
         return null;
       }
       await loadFirstPage(showLoader: false);
-      Get.snackbar('Success', result.message, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Success',
+        result.message,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return result.item;
     } finally {
       isSubmitting.value = false;
@@ -293,11 +350,19 @@ class BookingController extends GetxController {
     try {
       final result = await _bookingService.updateBookingStatus(id, request);
       if (!result.success) {
-        Get.snackbar('Error', result.message, snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar(
+          'Error',
+          result.message,
+          snackPosition: SnackPosition.BOTTOM,
+        );
         return null;
       }
       await loadFirstPage(showLoader: false);
-      Get.snackbar('Success', result.message, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Success',
+        result.message,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return result.item;
     } finally {
       isSubmitting.value = false;
@@ -313,35 +378,105 @@ class BookingController extends GetxController {
     final result = await _bookingService.cancelBooking(booking.id);
     if (!result.success) {
       items[index] = snapshot;
-      Get.snackbar('Error', result.message, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        result.message,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
-    Get.snackbar('Success', result.message, snackPosition: SnackPosition.BOTTOM);
+    Get.snackbar(
+      'Success',
+      result.message,
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 
-  Future<void> deleteBooking(BookingResponseDto booking) async {
-    final index = items.indexWhere((e) => e.id == booking.id);
-    if (index < 0) return;
-    final snapshot = items[index];
-    items.removeAt(index);
+  Future<bool> payBookingWithRazorpay(BookingResponseDto booking) async {
+    if (!_isRazorpaySupportedPlatform) {
+      Get.snackbar(
+        'Unavailable',
+        'Razorpay checkout is supported on Android and iOS only.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+    if (!await _isRazorpayPluginAvailable()) {
+      Get.snackbar(
+        'Payment Setup Error',
+        'Razorpay plugin not loaded. Run a full app restart and try again.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+    if (isSubmitting.value) return false;
 
-    final result = await _bookingService.deleteBooking(booking.id);
-    if (!result.success) {
-      items.insert(index, snapshot);
-      Get.snackbar('Error', result.message, snackPosition: SnackPosition.BOTTOM);
-      return;
+    isSubmitting.value = true;
+    try {
+      final orderResult = await _bookingService.createRazorpayOrder(
+        RazorpayOrderRequestDto(bookingId: booking.id),
+      );
+      if (!orderResult.success || orderResult.item == null) {
+        Get.snackbar(
+          'Payment Failed',
+          orderResult.message,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return false;
+      }
+
+      final order = orderResult.item!;
+      final paymentUser = await _resolvePaymentUser();
+      _activeRazorpayBookingId = booking.id;
+      _activeRazorpayOrderId = order.orderId.trim();
+      _paymentCompleter = Completer<RazorpayVerifyResponseDto?>();
+
+      _openRazorpayCheckout(order: order, booking: booking, user: paymentUser);
+      final verified = await _paymentCompleter!.future.timeout(
+        const Duration(minutes: 3),
+        onTimeout: () => null,
+      );
+      _clearActivePaymentContext();
+      if (verified == null) return false;
+
+      await loadFirstPage(showLoader: false);
+      Get.snackbar(
+        'Payment Update',
+        verified.frontendMessage.trim().isEmpty
+            ? 'Payment processed successfully.'
+            : verified.frontendMessage,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return true;
+    } on MissingPluginException {
+      _clearActivePaymentContext();
+      Get.snackbar(
+        'Payment Setup Error',
+        'Razorpay plugin is not initialized. Please rebuild the app and try again.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    } catch (_) {
+      _clearActivePaymentContext();
+      Get.snackbar(
+        'Payment Failed',
+        'Unable to start Razorpay checkout. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    } finally {
+      isSubmitting.value = false;
     }
-    Get.snackbar('Success', result.message, snackPosition: SnackPosition.BOTTOM);
-    if (items.isEmpty && page.value > 0) {
-      page.value -= 1;
-    }
-    await _load(showLoader: false);
   }
 
   Future<BookingResponseDto?> getBookingById(int id) async {
     final result = await _bookingService.getBookingById(id);
     if (!result.success) {
-      Get.snackbar('Error', result.message, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        result.message,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return null;
     }
     return result.item;
@@ -386,5 +521,144 @@ class BookingController extends GetxController {
     final m = value.month.toString().padLeft(2, '0');
     final d = value.day.toString().padLeft(2, '0');
     return '$y-$m-$d';
+  }
+
+  bool get _isRazorpaySupportedPlatform {
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+  }
+
+  void _openRazorpayCheckout({
+    required RazorpayOrderResponseDto order,
+    required BookingResponseDto booking,
+    required Map<String, dynamic> user,
+  }) {
+    final keyId = order.keyId.trim().isNotEmpty
+        ? order.keyId.trim()
+        : _fallbackRazorpayKeyId;
+    final contact = _resolveUserContact(user);
+    final prefill = <String, dynamic>{
+      'email': (user['email'] as String?)?.trim().isNotEmpty == true
+          ? (user['email'] as String).trim()
+          : currentUserEmail,
+    };
+    if (contact != null) {
+      prefill['contact'] = contact;
+    }
+    final options = <String, dynamic>{
+      'key': keyId,
+      'amount': order.amountInPaise,
+      'currency': order.currency.trim().isEmpty ? 'INR' : order.currency,
+      'name': 'Stay Booking',
+      'description': 'Room booking payment',
+      'order_id': order.orderId,
+      'retry': {'enabled': true, 'max_count': 1},
+      'send_sms_hash': true,
+      'theme': {'color': '#3E1E86'},
+      'prefill': prefill,
+      'notes': {
+        'bookingId': '${booking.id}',
+        'hotelName': booking.hotelName,
+        'roomType': booking.roomType,
+      },
+    };
+    _razorpay.open(options);
+  }
+
+  Future<bool> _isRazorpayPluginAvailable() async {
+    try {
+      await _razorpayChannel.invokeMethod('resync');
+      return true;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return true;
+    }
+  }
+
+  String? _normalizedPhone(dynamic raw) {
+    final digits = (raw?.toString() ?? '').replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length < 10 || digits.length > 15) return null;
+    return digits;
+  }
+
+  String? _resolveUserContact(Map<String, dynamic> user) {
+    final raw =
+        user['mobileno'] ??
+        user['mobileNo'] ??
+        user['mobile'] ??
+        user['phoneNumber'] ??
+        user['phone'];
+    return _normalizedPhone(raw);
+  }
+
+  Future<Map<String, dynamic>> _resolvePaymentUser() async {
+    final email = currentUserEmail.trim();
+    if (email.isEmpty) return currentUser;
+
+    try {
+      final profile = await _userProfileService.getUserByEmail(email);
+      if (profile.success && profile.user != null) {
+        return profile.user!;
+      }
+    } catch (_) {
+      // Fall back to the in-memory user if profile lookup fails.
+    }
+    return currentUser;
+  }
+
+  Future<void> _handleRazorpaySuccess(PaymentSuccessResponse response) async {
+    final bookingId = _activeRazorpayBookingId;
+    if (bookingId == null) {
+      _paymentCompleter?.complete(null);
+      return;
+    }
+
+    final verifyResult = await _bookingService.verifyRazorpayPayment(
+      RazorpayVerifyRequestDto(
+        bookingId: bookingId,
+        razorpayOrderId: (response.orderId ?? '').trim().isEmpty
+            ? _activeRazorpayOrderId
+            : response.orderId!,
+        razorpayPaymentId: response.paymentId ?? '',
+        razorpaySignature: response.signature ?? '',
+      ),
+    );
+
+    if (!verifyResult.success || verifyResult.item == null) {
+      Get.snackbar(
+        'Payment Failed',
+        verifyResult.message,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      _paymentCompleter?.complete(null);
+      return;
+    }
+
+    _paymentCompleter?.complete(verifyResult.item);
+  }
+
+  void _handleRazorpayError(PaymentFailureResponse response) {
+    final reason = (response.message ?? 'Payment was not completed.').trim();
+    Get.snackbar('Payment Failed', reason, snackPosition: SnackPosition.BOTTOM);
+    _paymentCompleter?.complete(null);
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    final wallet = (response.walletName ?? '').trim();
+    Get.snackbar(
+      'External Wallet',
+      wallet.isEmpty
+          ? 'External wallet selected.'
+          : 'External wallet selected: $wallet',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  void _clearActivePaymentContext() {
+    _activeRazorpayBookingId = null;
+    _activeRazorpayOrderId = '';
+    _paymentCompleter = null;
   }
 }

@@ -68,10 +68,7 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF3F1D89),
-        title: Text(
-          hotelName,
-          style: const TextStyle(color: Colors.white),
-        ),
+        title: Text(hotelName, style: const TextStyle(color: Colors.white)),
         centerTitle: true,
       ),
       bottomNavigationBar: _canBook
@@ -342,7 +339,9 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
 
   IconData get _bookingButtonIcon {
     if (_isCheckingExistingBooking) return Icons.hourglass_top_rounded;
-    if (_activeBookingForRoom != null) return Icons.check_circle_outline_rounded;
+    if (_activeBookingForRoom != null) {
+      return Icons.check_circle_outline_rounded;
+    }
     if (!widget.room.available) return Icons.block_outlined;
     return Icons.calendar_month_outlined;
   }
@@ -408,14 +407,19 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final checkoutDateOnly = DateTime(checkout.year, checkout.month, checkout.day);
+    final checkoutDateOnly = DateTime(
+      checkout.year,
+      checkout.month,
+      checkout.day,
+    );
     return !checkoutDateOnly.isBefore(today);
   }
 
   Future<void> _openBookNowSheet() async {
     DateTime? checkInDate = DateTime.now();
     DateTime? checkOutDate = DateTime.now().add(const Duration(days: 1));
-    final guestsController = TextEditingController(text: '1');
+    String guestsText = '1';
+    bool isSheetSubmitting = false;
 
     await showModalBottomSheet<void>(
       context: context,
@@ -484,8 +488,10 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: guestsController,
+                    TextFormField(
+                      enabled: !isSheetSubmitting,
+                      initialValue: guestsText,
+                      onChanged: (value) => guestsText = value,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
                         labelText: 'Number of Guests',
@@ -496,7 +502,7 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton(
-                        onPressed: _isBookingSubmitting
+                        onPressed: (_isBookingSubmitting || isSheetSubmitting)
                             ? null
                             : () async {
                                 final userId = _currentUserId;
@@ -508,9 +514,7 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
                                   );
                                   return;
                                 }
-                                final guests = int.tryParse(
-                                  guestsController.text.trim(),
-                                );
+                                final guests = int.tryParse(guestsText.trim());
                                 if (guests == null || guests <= 0) {
                                   Get.snackbar(
                                     'Validation',
@@ -519,7 +523,8 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
                                   );
                                   return;
                                 }
-                                if (checkInDate == null || checkOutDate == null) {
+                                if (checkInDate == null ||
+                                    checkOutDate == null) {
                                   Get.snackbar(
                                     'Validation',
                                     'Check-in and check-out dates are required.',
@@ -536,6 +541,7 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
                                   return;
                                 }
 
+                                setModalState(() => isSheetSubmitting = true);
                                 setState(() => _isBookingSubmitting = true);
                                 final controller = _resolveBookingController();
                                 final result = await controller.createBooking(
@@ -550,6 +556,11 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
                                 );
                                 if (!mounted) return;
                                 setState(() => _isBookingSubmitting = false);
+                                if (context.mounted) {
+                                  setModalState(
+                                    () => isSheetSubmitting = false,
+                                  );
+                                }
 
                                 if (result != null && context.mounted) {
                                   setState(() {
@@ -569,7 +580,6 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
         );
       },
     );
-    guestsController.dispose();
   }
 
   BookingController _resolveBookingController() {

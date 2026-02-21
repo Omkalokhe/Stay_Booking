@@ -1,6 +1,7 @@
 package com.dto;
 
 import com.enums.BookingStatus;
+import com.enums.PaymentMethod;
 import com.enums.PaymentStatus;
 import lombok.Builder;
 import lombok.Data;
@@ -25,7 +26,8 @@ public class BookingResponseDto {
     private BigDecimal totalAmount;
     private BookingStatus bookingStatus;
     private PaymentStatus paymentStatus;
+    private PaymentMethod paymentMethod;
+    private String paymentReference;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 }
-

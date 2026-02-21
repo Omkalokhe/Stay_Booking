@@ -52,7 +52,9 @@ class _VendorBookingTabState extends State<VendorBookingTab> {
 
         return LayoutBuilder(
           builder: (context, constraints) {
-            final horizontalPadding = constraints.maxWidth >= 1000 ? 24.0 : 16.0;
+            final horizontalPadding = constraints.maxWidth >= 1000
+                ? 24.0
+                : 16.0;
             final isWide = constraints.maxWidth >= 980;
             return ListView(
               padding: EdgeInsets.fromLTRB(
@@ -154,7 +156,8 @@ class _VendorBookingTabState extends State<VendorBookingTab> {
                           ),
                         ),
                       ],
-                      onChanged: (value) => setModalState(() => hotelId = value),
+                      onChanged: (value) =>
+                          setModalState(() => hotelId = value),
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<int?>(
@@ -377,11 +380,6 @@ class _VendorBookingTabState extends State<VendorBookingTab> {
                           onPressed: () => _controller.cancelBooking(b),
                           icon: const Icon(Icons.cancel_outlined),
                         ),
-                        IconButton(
-                          tooltip: 'Delete Booking',
-                          onPressed: () => _controller.deleteBooking(b),
-                          icon: const Icon(Icons.delete_outline),
-                        ),
                       ],
                     ),
                   ),
@@ -412,14 +410,12 @@ class _VendorBookingTabState extends State<VendorBookingTab> {
             if (value == 'edit') await _openUpdateBookingSheet(booking);
             if (value == 'status') await _openStatusUpdateSheet(booking);
             if (value == 'cancel') await _controller.cancelBooking(booking);
-            if (value == 'delete') await _controller.deleteBooking(booking);
           },
           itemBuilder: (context) => const [
             PopupMenuItem(value: 'view', child: Text('View')),
             PopupMenuItem(value: 'edit', child: Text('Edit')),
             PopupMenuItem(value: 'status', child: Text('Update Status')),
             PopupMenuItem(value: 'cancel', child: Text('Cancel')),
-            PopupMenuItem(value: 'delete', child: Text('Delete')),
           ],
         ),
       ),
@@ -429,7 +425,9 @@ class _VendorBookingTabState extends State<VendorBookingTab> {
   Future<void> _openUpdateBookingSheet(BookingResponseDto booking) async {
     DateTime? checkInDate = _parseDate(booking.checkInDate);
     DateTime? checkOutDate = _parseDate(booking.checkOutDate);
-    final guestsController = TextEditingController(text: '${booking.numberOfGuests}');
+    final guestsController = TextEditingController(
+      text: '${booking.numberOfGuests}',
+    );
 
     await showModalBottomSheet<void>(
       context: context,
@@ -501,7 +499,8 @@ class _VendorBookingTabState extends State<VendorBookingTab> {
                           onPressed: _controller.isSubmitting.value
                               ? null
                               : () async {
-                                  if (checkInDate == null || checkOutDate == null) {
+                                  if (checkInDate == null ||
+                                      checkOutDate == null) {
                                     Get.snackbar(
                                       'Validation',
                                       'Please select check-in and check-out dates.',
@@ -509,7 +508,10 @@ class _VendorBookingTabState extends State<VendorBookingTab> {
                                     return;
                                   }
                                   final guests =
-                                      int.tryParse(guestsController.text.trim()) ?? 0;
+                                      int.tryParse(
+                                        guestsController.text.trim(),
+                                      ) ??
+                                      0;
                                   if (guests <= 0) {
                                     Get.snackbar(
                                       'Validation',
@@ -517,14 +519,17 @@ class _VendorBookingTabState extends State<VendorBookingTab> {
                                     );
                                     return;
                                   }
-                                  final result = await _controller.updateBooking(
-                                    booking.id,
-                                    UpdateBookingRequestDto(
-                                      checkInDate: _dateOnly(checkInDate!),
-                                      checkOutDate: _dateOnly(checkOutDate!),
-                                      numberOfGuests: guests,
-                                    ),
-                                  );
+                                  final result = await _controller
+                                      .updateBooking(
+                                        booking.id,
+                                        UpdateBookingRequestDto(
+                                          checkInDate: _dateOnly(checkInDate!),
+                                          checkOutDate: _dateOnly(
+                                            checkOutDate!,
+                                          ),
+                                          numberOfGuests: guests,
+                                        ),
+                                      );
                                   if (result != null && context.mounted) {
                                     Navigator.of(context).pop();
                                   }
@@ -533,7 +538,9 @@ class _VendorBookingTabState extends State<VendorBookingTab> {
                               ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : const Text('Update Booking'),
                         ),
@@ -630,7 +637,9 @@ class _VendorBookingTabState extends State<VendorBookingTab> {
                               ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : const Text('Update Status'),
                         ),
@@ -676,7 +685,10 @@ class _VendorBookingTabState extends State<VendorBookingTab> {
                   _kv('Check-In', data.checkInDate),
                   _kv('Check-Out', data.checkOutDate),
                   _kv('Guests', '${data.numberOfGuests}'),
-                  _kv('Total Amount', 'Rs ${data.totalAmount.toStringAsFixed(2)}'),
+                  _kv(
+                    'Total Amount',
+                    'Rs ${data.totalAmount.toStringAsFixed(2)}',
+                  ),
                   _kv('Booking Status', data.bookingStatus),
                   _kv('Payment Status', data.paymentStatus),
                   _kv('Created', data.createdAt),
@@ -754,10 +766,7 @@ class _VendorBookingTabState extends State<VendorBookingTab> {
               children: [
                 Text(message, textAlign: TextAlign.center),
                 const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: onRetry,
-                  child: const Text('Retry'),
-                ),
+                ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
               ],
             ),
           ),

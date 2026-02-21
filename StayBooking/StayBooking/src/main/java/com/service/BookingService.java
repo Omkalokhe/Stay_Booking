@@ -25,7 +25,4 @@ public interface BookingService {
     ResponseEntity<?> updateBookingStatus(int id, UpdateBookingStatusRequestDto requestDto);
 
     ResponseEntity<?> cancelBooking(int id);
-
-    ResponseEntity<?> deleteBooking(int id);
 }
-

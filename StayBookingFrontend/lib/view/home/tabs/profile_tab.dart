@@ -11,7 +11,9 @@ class ProfileTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final emailKey = (user['email'] as String?)?.trim() ?? 'guest';
-    final profileTag = 'profile-$emailKey';
+    final roleKey = (user['role'] as String?)?.trim().toLowerCase() ?? 'user';
+    final idKey = user['id']?.toString().trim();
+    final profileTag = 'profile-$roleKey-$emailKey-${idKey ?? 'noid'}';
     final profileController =
         Get.isRegistered<ProfileController>(tag: profileTag)
         ? Get.find<ProfileController>(tag: profileTag)
