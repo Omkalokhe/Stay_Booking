@@ -1,8 +1,8 @@
+import 'package:get/get.dart';
 import 'package:stay_booking_frontend/model/app_role.dart';
 import 'package:stay_booking_frontend/model/login_request_dto.dart';
 import 'package:stay_booking_frontend/routes/app_routes.dart';
 import 'package:stay_booking_frontend/service/auth/login_service.dart';
-import 'package:get/get.dart';
 
 class LoginController extends GetxController {
   LoginController({LoginService? loginService})
@@ -49,9 +49,14 @@ class LoginController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
       );
       if (result.success) {
-        final roleValue = (result.user?['role'] as String?)?.trim().toUpperCase() ?? '';
-        final targetRoute =
-            roleValue == 'VENDOR' ? AppRoutes.vendorHome : AppRoutes.home;
+        final roleValue =
+            (result.user?['role'] as String?)?.trim().toUpperCase() ?? '';
+        final targetRoute = switch (roleValue) {
+          'ADMIN' => AppRoutes.adminHome,
+          'VENDOR' => AppRoutes.vendorHome,
+          _ => AppRoutes.home,
+        };
+
         await Future<void>.delayed(const Duration(milliseconds: 500));
         Get.offAllNamed(
           targetRoute,

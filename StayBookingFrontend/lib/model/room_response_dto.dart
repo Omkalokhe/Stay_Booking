@@ -27,6 +27,36 @@ class RoomResponseDto {
   final String createdBy;
   final String updatedBy;
 
+  RoomResponseDto copyWith({
+    int? id,
+    int? hotelId,
+    String? hotelName,
+    String? roomType,
+    String? description,
+    double? price,
+    bool? available,
+    List<String>? photos,
+    String? createdAt,
+    String? updatedAt,
+    String? createdBy,
+    String? updatedBy,
+  }) {
+    return RoomResponseDto(
+      id: id ?? this.id,
+      hotelId: hotelId ?? this.hotelId,
+      hotelName: hotelName ?? this.hotelName,
+      roomType: roomType ?? this.roomType,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      available: available ?? this.available,
+      photos: photos ?? this.photos,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
+      updatedBy: updatedBy ?? this.updatedBy,
+    );
+  }
+
   factory RoomResponseDto.fromJson(Map<String, dynamic> json) {
     return RoomResponseDto(
       id: _toInt(json['id']),

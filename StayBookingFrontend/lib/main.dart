@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:stay_booking_frontend/routes/app_routes.dart';
+import 'package:stay_booking_frontend/view/admin_home_screen.dart';
 import 'package:stay_booking_frontend/view/forgot_password_screen.dart';
 import 'package:stay_booking_frontend/view/home_screen.dart';
 import 'package:stay_booking_frontend/view/login_screen.dart';
@@ -8,7 +10,6 @@ import 'package:stay_booking_frontend/view/reset_password_screen.dart';
 import 'package:stay_booking_frontend/view/splashscreen.dart';
 import 'package:stay_booking_frontend/view/vendor/add_room_screen.dart';
 import 'package:stay_booking_frontend/view/vendor_home_screen.dart';
-import 'package:get/get.dart';
 
 void main() {
   runApp(const MyApp());
@@ -31,6 +32,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: AppRoutes.splash, page: () => const SplashScreen()),
         GetPage(name: AppRoutes.login, page: () => const LoginScreen()),
         GetPage(name: AppRoutes.home, page: () => const HomeScreen()),
+        GetPage(name: AppRoutes.adminHome, page: () => const AdminHomeScreen()),
         GetPage(
           name: AppRoutes.vendorHome,
           page: () => const VendorHomeScreen(),

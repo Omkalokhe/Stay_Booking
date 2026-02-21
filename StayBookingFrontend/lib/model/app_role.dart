@@ -1,6 +1,7 @@
 enum AppRole {
   customer,
   vendor,
+  admin,
 }
 
 extension AppRoleX on AppRole {
@@ -10,6 +11,8 @@ extension AppRoleX on AppRole {
         return 'CUSTOMER';
       case AppRole.vendor:
         return 'VENDOR';
+      case AppRole.admin:
+        return 'ADMIN';
     }
   }
 
@@ -19,6 +22,8 @@ extension AppRoleX on AppRole {
         return 'Customer';
       case AppRole.vendor:
         return 'Vendor';
+      case AppRole.admin:
+        return 'Admin';
     }
   }
 }

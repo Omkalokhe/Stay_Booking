@@ -23,8 +23,8 @@ class VendorRoomTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _searchAndFilter(c),
-              const SizedBox(height: 10),
+              _headerBar(context, c),
+              const SizedBox(height: 12),
               Obx(() => c.isLoading.value ? const LinearProgressIndicator() : const SizedBox.shrink()),
               Obx(
                 () => c.errorMessage.value.isEmpty
@@ -58,65 +58,174 @@ class VendorRoomTab extends StatelessWidget {
     );
   }
 
-  Widget _searchAndFilter(VendorRoomController c) {
-    return Obx(
-      () => Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          SizedBox(
-            width: 300,
-            child: TextField(
-              controller: c.searchController,
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) => c.fetchRooms(resetPage: true),
-              decoration: _input('Search rooms', Icons.search_rounded),
-            ),
-          ),
-          SizedBox(
-            width: 220,
-            child: TextField(
-              controller: c.hotelNameFilterController,
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) => c.fetchRooms(resetPage: true),
-              decoration: _input('Hotel Name', Icons.apartment_rounded),
-            ),
-          ),
-          SizedBox(
-            width: 170,
-            child: DropdownButtonFormField<String>(
-              initialValue: c.availabilityFilter.value == null
-                  ? 'all'
-                  : c.availabilityFilter.value!
-                  ? 'available'
-                  : 'unavailable',
-              decoration: _input('Status', Icons.event_available_outlined),
-              items: const [
-                DropdownMenuItem(value: 'all', child: Text('All')),
-                DropdownMenuItem(value: 'available', child: Text('Available')),
-                DropdownMenuItem(value: 'unavailable', child: Text('Unavailable')),
-              ],
-              onChanged: (v) {
-                if (v == 'all') c.setAvailabilityFilter(null);
-                if (v == 'available') c.setAvailabilityFilter(true);
-                if (v == 'unavailable') c.setAvailabilityFilter(false);
-              },
-            ),
-          ),
-          OutlinedButton(
-            onPressed: () {
-              c.resetFilters();
-              c.fetchRooms(resetPage: true);
-            },
-            child: const Text('Reset'),
-          ),
-          FilledButton(
-            onPressed: () => c.fetchRooms(resetPage: true),
-            child: const Text('Apply'),
-          ),
-        ],
-      ),
+  Widget _headerBar(BuildContext context, VendorRoomController controller) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 720;
+
+        final searchField = TextField(
+          controller: controller.searchController,
+          textInputAction: TextInputAction.search,
+          onSubmitted: (_) => controller.fetchRooms(resetPage: true),
+          decoration: _input('Search rooms', Icons.search_rounded),
+        );
+
+        final filterButton = IconButton.filledTonal(
+          tooltip: 'Filter',
+          onPressed: () => _openFilterSheet(context, controller),
+          icon: const Icon(Icons.filter_alt_outlined),
+        );
+
+        if (isCompact) {
+          return Row(
+            children: [
+              Expanded(child: searchField),
+              const SizedBox(width: 8),
+              filterButton,
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: searchField),
+            const SizedBox(width: 8),
+            filterButton,
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _openFilterSheet(
+    BuildContext context,
+    VendorRoomController controller,
+  ) async {
+    String selectedSort = controller.sortBy.value;
+    String selectedDirection = controller.direction.value;
+    bool? selectedAvailability = controller.availabilityFilter.value;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  10,
+                  16,
+                  16 + MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Filter Rooms',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: controller.hotelNameFilterController,
+                      decoration: _input('Hotel Name', Icons.apartment_rounded),
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedAvailability == null
+                          ? 'all'
+                          : selectedAvailability == true
+                          ? 'available'
+                          : 'unavailable',
+                      decoration: _input('Status', Icons.event_available_outlined),
+                      items: const [
+                        DropdownMenuItem(value: 'all', child: Text('All')),
+                        DropdownMenuItem(value: 'available', child: Text('Available')),
+                        DropdownMenuItem(value: 'unavailable', child: Text('Unavailable')),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          selectedAvailability = value == 'all'
+                              ? null
+                              : value == 'available';
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedSort,
+                      decoration: _input('Sort By', Icons.sort_rounded),
+                      items: const [
+                        DropdownMenuItem(value: 'roomType', child: Text('Room Type')),
+                        DropdownMenuItem(value: 'price', child: Text('Price')),
+                        DropdownMenuItem(value: 'available', child: Text('Availability')),
+                        DropdownMenuItem(value: 'createdat', child: Text('Created At')),
+                        DropdownMenuItem(value: 'updatedat', child: Text('Updated At')),
+                        DropdownMenuItem(value: 'hotelName', child: Text('Hotel Name')),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          selectedSort = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedDirection,
+                      decoration: _input('Direction', Icons.swap_vert_rounded),
+                      items: const [
+                        DropdownMenuItem(value: 'asc', child: Text('Ascending')),
+                        DropdownMenuItem(value: 'desc', child: Text('Descending')),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          selectedDirection = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              controller.resetFilters();
+                              Navigator.of(context).pop();
+                              controller.fetchRooms(resetPage: true);
+                            },
+                            child: const Text('Reset'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () {
+                              controller.setSortBy(selectedSort);
+                              controller.setDirection(selectedDirection);
+                              controller.setAvailabilityFilter(selectedAvailability);
+                              Navigator.of(context).pop();
+                              controller.fetchRooms(resetPage: true);
+                            },
+                            child: const Text('Apply'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

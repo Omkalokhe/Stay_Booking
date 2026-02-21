@@ -1,16 +1,19 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:stay_booking_frontend/controller/booking/booking_controller.dart';
+import 'package:stay_booking_frontend/model/booking_response_dto.dart';
+import 'package:stay_booking_frontend/model/create_booking_request_dto.dart';
 import 'package:stay_booking_frontend/model/room_response_dto.dart';
+import 'package:stay_booking_frontend/service/booking/booking_service.dart';
 import 'package:stay_booking_frontend/service/room/room_service.dart';
 
 class RoomViewScreen extends StatefulWidget {
-  const RoomViewScreen({
-    required this.room,
-    super.key,
-  });
+  const RoomViewScreen({required this.room, this.user, super.key});
 
   final RoomResponseDto room;
+  final Map<String, dynamic>? user;
 
   @override
   State<RoomViewScreen> createState() => _RoomViewScreenState();
@@ -18,8 +21,12 @@ class RoomViewScreen extends StatefulWidget {
 
 class _RoomViewScreenState extends State<RoomViewScreen> {
   late final PageController _pageController;
+  final BookingService _bookingService = BookingService();
   Timer? _timer;
   int _currentIndex = 0;
+  bool _isBookingSubmitting = false;
+  bool _isCheckingExistingBooking = false;
+  BookingResponseDto? _activeBookingForRoom;
 
   List<String> get _photoUrls => widget.room.photos
       .map(RoomService.roomPhotoUrl)
@@ -41,6 +48,7 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
         );
       });
     }
+    _loadExistingBookingState();
   }
 
   @override
@@ -59,8 +67,51 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(hotelName),
+        backgroundColor: const Color(0xFF3F1D89),
+        title: Text(
+          hotelName,
+          style: const TextStyle(color: Colors.white),
+        ),
+        centerTitle: true,
       ),
+      bottomNavigationBar: _canBook
+          ? SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                child: FilledButton.icon(
+                  onPressed: _canPerformBookingAction
+                      ? _openBookNowSheet
+                      : null,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF3F1D89),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: _isBookingSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Icon(_bookingButtonIcon),
+                  label: Text(
+                    _bookingButtonLabel,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ),
+            )
+          : null,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -78,9 +129,14 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
                     children: [
                       _detailRow('Room Type', room.roomType),
                       _detailRow('Hotel', hotelName),
-                      _detailRow('Price', 'Rs ${room.price.toStringAsFixed(2)}'),
-                      _detailRow('Status', room.available ? 'Available' : 'Unavailable'),
-                      _detailRow('Room ID', '${room.id}'),
+                      _detailRow(
+                        'Price',
+                        'Rs ${room.price.toStringAsFixed(2)}',
+                      ),
+                      _detailRow(
+                        'Status',
+                        room.available ? 'Available' : 'Unavailable',
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -91,7 +147,10 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
                         room.description.trim().isEmpty
                             ? 'No description available.'
                             : room.description,
-                        style: const TextStyle(color: Colors.black87, height: 1.4),
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          height: 1.4,
+                        ),
                       ),
                     ],
                   ),
@@ -117,9 +176,16 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
         child: const Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.image_not_supported_outlined, size: 36, color: Colors.black54),
+            Icon(
+              Icons.image_not_supported_outlined,
+              size: 36,
+              color: Colors.black54,
+            ),
             SizedBox(height: 8),
-            Text('No room photos available', style: TextStyle(color: Colors.black54)),
+            Text(
+              'No room photos available',
+              style: TextStyle(color: Colors.black54),
+            ),
           ],
         ),
       );
@@ -191,14 +257,18 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: room.available ? const Color(0xFFDFF6E4) : const Color(0xFFFDECEC),
+            color: room.available
+                ? const Color(0xFFDFF6E4)
+                : const Color(0xFFFDECEC),
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
             room.available ? 'Available' : 'Unavailable',
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: room.available ? const Color(0xFF1B7D39) : const Color(0xFFC62828),
+              color: room.available
+                  ? const Color(0xFF1B7D39)
+                  : const Color(0xFFC62828),
             ),
           ),
         ),
@@ -240,18 +310,298 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
             width: 120,
             child: Text(
               label,
-              style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: Colors.black54,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(color: Colors.black87),
-            ),
+            child: Text(value, style: const TextStyle(color: Colors.black87)),
           ),
         ],
       ),
     );
+  }
+
+  bool get _canBook {
+    final user = widget.user;
+    if (user == null) return false;
+    final role = (user['role'] as String?)?.trim().toUpperCase() ?? '';
+    if (role == 'ADMIN' || role == 'VENDOR') return false;
+    return _currentUserId != null;
+  }
+
+  bool get _canPerformBookingAction {
+    return !_isBookingSubmitting &&
+        !_isCheckingExistingBooking &&
+        _activeBookingForRoom == null &&
+        widget.room.available;
+  }
+
+  IconData get _bookingButtonIcon {
+    if (_isCheckingExistingBooking) return Icons.hourglass_top_rounded;
+    if (_activeBookingForRoom != null) return Icons.check_circle_outline_rounded;
+    if (!widget.room.available) return Icons.block_outlined;
+    return Icons.calendar_month_outlined;
+  }
+
+  String get _bookingButtonLabel {
+    if (_isCheckingExistingBooking) return 'Checking booking status...';
+    if (_activeBookingForRoom != null) {
+      return 'Booking ${_activeBookingForRoom!.bookingStatus}';
+    }
+    if (!widget.room.available) return 'Room Unavailable';
+    return 'Book Now';
+  }
+
+  int? get _currentUserId {
+    final raw = widget.user?['id'];
+    if (raw is int) return raw;
+    return int.tryParse(raw?.toString() ?? '');
+  }
+
+  Future<void> _loadExistingBookingState() async {
+    if (!_canBook) return;
+    final userId = _currentUserId;
+    if (userId == null) return;
+
+    setState(() {
+      _isCheckingExistingBooking = true;
+    });
+
+    final result = await _bookingService.getBookings(
+      page: 0,
+      size: 100,
+      sortBy: 'updatedat',
+      direction: 'desc',
+      userId: userId,
+      roomId: widget.room.id,
+    );
+
+    BookingResponseDto? activeBooking;
+    if (result.success) {
+      for (final booking in result.pageData.content) {
+        if (_isActiveBooking(booking)) {
+          activeBooking = booking;
+          break;
+        }
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _activeBookingForRoom = activeBooking;
+      _isCheckingExistingBooking = false;
+    });
+  }
+
+  bool _isActiveBooking(BookingResponseDto booking) {
+    final status = booking.bookingStatus.trim().toUpperCase();
+    if (status != 'PENDING' && status != 'CONFIRMED') {
+      return false;
+    }
+
+    final checkout = DateTime.tryParse(booking.checkOutDate);
+    if (checkout == null) return true;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final checkoutDateOnly = DateTime(checkout.year, checkout.month, checkout.day);
+    return !checkoutDateOnly.isBefore(today);
+  }
+
+  Future<void> _openBookNowSheet() async {
+    DateTime? checkInDate = DateTime.now();
+    DateTime? checkOutDate = DateTime.now().add(const Duration(days: 1));
+    final guestsController = TextEditingController(text: '1');
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  16 + MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Book ${widget.room.roomType}',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final selected = await _pickDate(checkInDate);
+                              if (selected == null) return;
+                              setModalState(() {
+                                checkInDate = selected;
+                                if (checkOutDate != null &&
+                                    !checkOutDate!.isAfter(checkInDate!)) {
+                                  checkOutDate = checkInDate!.add(
+                                    const Duration(days: 1),
+                                  );
+                                }
+                              });
+                            },
+                            icon: const Icon(Icons.event_available_outlined),
+                            label: Text(_dateOnly(checkInDate!)),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final selected = await _pickDate(
+                                checkOutDate,
+                                minDate: checkInDate?.add(
+                                  const Duration(days: 1),
+                                ),
+                              );
+                              if (selected == null) return;
+                              setModalState(() => checkOutDate = selected);
+                            },
+                            icon: const Icon(Icons.event_busy_outlined),
+                            label: Text(_dateOnly(checkOutDate!)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: guestsController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Number of Guests',
+                        prefixIcon: Icon(Icons.group_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: _isBookingSubmitting
+                            ? null
+                            : () async {
+                                final userId = _currentUserId;
+                                if (userId == null) {
+                                  Get.snackbar(
+                                    'Error',
+                                    'Unable to identify current user.',
+                                    snackPosition: SnackPosition.BOTTOM,
+                                  );
+                                  return;
+                                }
+                                final guests = int.tryParse(
+                                  guestsController.text.trim(),
+                                );
+                                if (guests == null || guests <= 0) {
+                                  Get.snackbar(
+                                    'Validation',
+                                    'Guests must be greater than 0.',
+                                    snackPosition: SnackPosition.BOTTOM,
+                                  );
+                                  return;
+                                }
+                                if (checkInDate == null || checkOutDate == null) {
+                                  Get.snackbar(
+                                    'Validation',
+                                    'Check-in and check-out dates are required.',
+                                    snackPosition: SnackPosition.BOTTOM,
+                                  );
+                                  return;
+                                }
+                                if (!checkOutDate!.isAfter(checkInDate!)) {
+                                  Get.snackbar(
+                                    'Validation',
+                                    'Check-out must be after check-in date.',
+                                    snackPosition: SnackPosition.BOTTOM,
+                                  );
+                                  return;
+                                }
+
+                                setState(() => _isBookingSubmitting = true);
+                                final controller = _resolveBookingController();
+                                final result = await controller.createBooking(
+                                  CreateBookingRequestDto(
+                                    userId: userId,
+                                    hotelId: widget.room.hotelId,
+                                    roomId: widget.room.id,
+                                    checkInDate: _dateOnly(checkInDate!),
+                                    checkOutDate: _dateOnly(checkOutDate!),
+                                    numberOfGuests: guests,
+                                  ),
+                                );
+                                if (!mounted) return;
+                                setState(() => _isBookingSubmitting = false);
+
+                                if (result != null && context.mounted) {
+                                  setState(() {
+                                    _activeBookingForRoom = result;
+                                  });
+                                  Navigator.of(context).pop();
+                                }
+                              },
+                        child: const Text('Confirm Booking'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+    guestsController.dispose();
+  }
+
+  BookingController _resolveBookingController() {
+    final user = widget.user ?? <String, dynamic>{};
+    final email = (user['email'] as String?)?.trim() ?? 'user';
+    final tag = 'booking-$email';
+    if (Get.isRegistered<BookingController>(tag: tag)) {
+      return Get.find<BookingController>(tag: tag);
+    }
+    return Get.put(BookingController(currentUser: user), tag: tag);
+  }
+
+  Future<DateTime?> _pickDate(DateTime? initial, {DateTime? minDate}) {
+    final now = DateTime.now();
+    final safeMin = DateTime(now.year, now.month, now.day);
+    final firstDate = minDate ?? safeMin;
+    final initialDate = initial != null && !initial.isBefore(firstDate)
+        ? initial
+        : firstDate;
+
+    return showDatePicker(
+      context: context,
+      firstDate: firstDate,
+      lastDate: DateTime(now.year + 5),
+      initialDate: initialDate,
+    );
+  }
+
+  String _dateOnly(DateTime value) {
+    final y = value.year.toString().padLeft(4, '0');
+    final m = value.month.toString().padLeft(2, '0');
+    final d = value.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
   }
 }

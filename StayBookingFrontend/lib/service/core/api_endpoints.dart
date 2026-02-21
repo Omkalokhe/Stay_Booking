@@ -20,9 +20,11 @@ class ApiEndpoints {
     return base.resolve(value).toString();
   }
 
-  static Uri forgotPassword() => Uri.parse('$_baseUrl/api/auth/password/forgot-password');
+  static Uri forgotPassword() =>
+      Uri.parse('$_baseUrl/api/auth/password/forgot-password');
 
-  static Uri resetPassword() => Uri.parse('$_baseUrl/api/auth/password/reset-password');
+  static Uri resetPassword() =>
+      Uri.parse('$_baseUrl/api/auth/password/reset-password');
 
   static Uri registerUser() => Uri.parse('$_baseUrl/api/users/register');
 
@@ -90,7 +92,8 @@ class ApiEndpoints {
         'size': '$size',
         'sortBy': sortBy,
         'direction': direction,
-        if ((hotelName ?? '').trim().isNotEmpty) 'hotelName': hotelName!.trim(),
+        if ((hotelName ?? '').trim().isNotEmpty)
+          'hotelName': hotelName!.trim(),
         if (available != null) 'available': '$available',
         if ((search ?? '').trim().isNotEmpty) 'search': search!.trim(),
       },
@@ -105,4 +108,146 @@ class ApiEndpoints {
     final encoded = Uri.encodeComponent(filename.trim());
     return Uri.parse('$_baseUrl/api/rooms/photos/$encoded');
   }
+
+  static Uri adminUsers({
+    required int page,
+    required int size,
+    required String sortBy,
+    required String direction,
+    String? role,
+    String? status,
+    String? search,
+  }) {
+    return Uri.parse('$_baseUrl/api/admin/users').replace(
+      queryParameters: {
+        'page': '$page',
+        'size': '$size',
+        'sortBy': sortBy,
+        'direction': direction,
+        if ((role ?? '').trim().isNotEmpty) 'role': role!.trim(),
+        if ((status ?? '').trim().isNotEmpty) 'status': status!.trim(),
+        if ((search ?? '').trim().isNotEmpty) 'search': search!.trim(),
+      },
+    );
+  }
+
+  static Uri adminUpdateUserAccess(int userId) =>
+      Uri.parse('$_baseUrl/api/admin/users/$userId/access');
+
+  static Uri adminDeleteUser(
+    int userId, {
+    required bool hardDelete,
+    required String deletedBy,
+  }) {
+    return Uri.parse('$_baseUrl/api/admin/users/$userId').replace(
+      queryParameters: {
+        'hardDelete': '$hardDelete',
+        'deletedBy': deletedBy.trim(),
+      },
+    );
+  }
+
+  static Uri adminHotels({
+    required int page,
+    required int size,
+    required String sortBy,
+    required String direction,
+    String? city,
+    String? country,
+    String? search,
+  }) {
+    return Uri.parse('$_baseUrl/api/admin/hotels').replace(
+      queryParameters: {
+        'page': '$page',
+        'size': '$size',
+        'sortBy': sortBy,
+        'direction': direction,
+        if ((city ?? '').trim().isNotEmpty) 'city': city!.trim(),
+        if ((country ?? '').trim().isNotEmpty) 'country': country!.trim(),
+        if ((search ?? '').trim().isNotEmpty) 'search': search!.trim(),
+      },
+    );
+  }
+
+  static Uri adminDeleteHotel(int hotelId, {required String deletedBy}) {
+    return Uri.parse('$_baseUrl/api/admin/hotels/$hotelId').replace(
+      queryParameters: {
+        'deletedBy': deletedBy.trim(),
+      },
+    );
+  }
+
+  static Uri adminRooms({
+    required int page,
+    required int size,
+    required String sortBy,
+    required String direction,
+    String? hotelName,
+    bool? available,
+    String? search,
+  }) {
+    return Uri.parse('$_baseUrl/api/admin/rooms').replace(
+      queryParameters: {
+        'page': '$page',
+        'size': '$size',
+        'sortBy': sortBy,
+        'direction': direction,
+        if ((hotelName ?? '').trim().isNotEmpty)
+          'hotelName': hotelName!.trim(),
+        if (available != null) 'available': '$available',
+        if ((search ?? '').trim().isNotEmpty) 'search': search!.trim(),
+      },
+    );
+  }
+
+  static Uri adminUpdateRoomStatus(int roomId) =>
+      Uri.parse('$_baseUrl/api/admin/rooms/$roomId/status');
+
+  static Uri adminDeleteRoom(int roomId) =>
+      Uri.parse('$_baseUrl/api/admin/rooms/$roomId');
+
+  static Uri createBooking() => Uri.parse('$_baseUrl/api/bookings');
+
+  static Uri getBookingById(int id) => Uri.parse('$_baseUrl/api/bookings/$id');
+
+  static Uri getBookings({
+    required int page,
+    required int size,
+    required String sortBy,
+    required String direction,
+    int? userId,
+    int? hotelId,
+    int? roomId,
+    String? bookingStatus,
+    String? paymentStatus,
+    String? checkInFrom,
+    String? checkOutTo,
+  }) {
+    return Uri.parse('$_baseUrl/api/bookings').replace(
+      queryParameters: {
+        'page': '$page',
+        'size': '$size',
+        'sortBy': sortBy,
+        'direction': direction,
+        if (userId != null) 'userId': '$userId',
+        if (hotelId != null) 'hotelId': '$hotelId',
+        if (roomId != null) 'roomId': '$roomId',
+        if ((bookingStatus ?? '').trim().isNotEmpty)
+          'bookingStatus': bookingStatus!.trim().toUpperCase(),
+        if ((paymentStatus ?? '').trim().isNotEmpty)
+          'paymentStatus': paymentStatus!.trim().toUpperCase(),
+        if ((checkInFrom ?? '').trim().isNotEmpty) 'checkInFrom': checkInFrom!.trim(),
+        if ((checkOutTo ?? '').trim().isNotEmpty) 'checkOutTo': checkOutTo!.trim(),
+      },
+    );
+  }
+
+  static Uri updateBooking(int id) => Uri.parse('$_baseUrl/api/bookings/$id');
+
+  static Uri updateBookingStatus(int id) =>
+      Uri.parse('$_baseUrl/api/bookings/$id/status');
+
+  static Uri cancelBooking(int id) => Uri.parse('$_baseUrl/api/bookings/$id/cancel');
+
+  static Uri deleteBooking(int id) => Uri.parse('$_baseUrl/api/bookings/$id');
 }

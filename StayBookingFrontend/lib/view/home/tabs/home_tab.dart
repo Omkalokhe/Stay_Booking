@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:stay_booking_frontend/controller/customer_booking_controller.dart';
 import 'package:stay_booking_frontend/model/room_response_dto.dart';
 import 'package:stay_booking_frontend/view/vendor/room_view_screen.dart';
-import 'package:get/get.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({required this.user, super.key});
@@ -14,10 +14,11 @@ class HomeTab extends StatelessWidget {
     const tag = 'customer-booking';
     final roomController = Get.isRegistered<CustomerBookingController>(tag: tag)
         ? Get.find<CustomerBookingController>(tag: tag)
-        : Get.put(CustomerBookingController(), tag: tag, permanent: true);
+        : Get.put(CustomerBookingController(), tag: tag);
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Color(0xFF3F1D89),
         toolbarHeight: 60,
         titleSpacing: 0,
         title: Padding(
@@ -269,7 +270,7 @@ class HomeTab extends StatelessWidget {
       onTap: () async {
         final detailed = await c.getRoomForView(room);
         if (!context.mounted) return;
-        Get.to(() => RoomViewScreen(room: detailed));
+        Get.to(() => RoomViewScreen(room: detailed, user: user));
       },
       child: Card(
         color: const Color(0xFFF9F8FD),

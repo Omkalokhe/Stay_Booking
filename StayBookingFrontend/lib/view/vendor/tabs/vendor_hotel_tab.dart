@@ -356,7 +356,6 @@ class VendorHotelTab extends StatelessWidget {
                         Icons.sort_rounded,
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'id', child: Text('ID')),
                         DropdownMenuItem(value: 'name', child: Text('Name')),
                         DropdownMenuItem(value: 'city', child: Text('City')),
                         DropdownMenuItem(
@@ -403,8 +402,8 @@ class VendorHotelTab extends StatelessWidget {
                             onPressed: () {
                               controller.cityFilterController.clear();
                               controller.countryFilterController.clear();
-                              controller.setSortBy('id');
-                              controller.setDirection('asc');
+                              controller.setSortBy('updatedat');
+                              controller.setDirection('desc');
                               Navigator.of(context).pop();
                               controller.fetchHotels(resetPage: true);
                             },

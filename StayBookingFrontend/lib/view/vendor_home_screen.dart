@@ -1,4 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:stay_booking_frontend/controller/booking/booking_controller.dart';
+import 'package:stay_booking_frontend/controller/vendor_hotel_controller.dart';
+import 'package:stay_booking_frontend/controller/vendor_room_controller.dart';
 import 'package:stay_booking_frontend/view/vendor/tabs/vendor_booking_tab.dart';
 import 'package:stay_booking_frontend/view/vendor/tabs/vendor_hotel_tab.dart';
 import 'package:stay_booking_frontend/view/vendor/tabs/vendor_profile_tab_screen.dart';
@@ -12,15 +17,41 @@ class VendorHomeScreen extends StatefulWidget {
   State<VendorHomeScreen> createState() => _VendorHomeScreenState();
 }
 
-class _VendorHomeScreenState extends State<VendorHomeScreen> {
+class _VendorHomeScreenState extends State<VendorHomeScreen>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
   bool _initializedFromArgs = false;
+  Timer? _autoRefreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      _refreshCurrentTabIfStale();
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoRefreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshCurrentTab(force: true);
+    }
+  }
 
   void _onDestinationSelected(int index) {
     if (_selectedIndex == index) return;
     setState(() {
       _selectedIndex = index;
     });
+    _refreshCurrentTab(force: true);
   }
 
   @override
@@ -106,5 +137,42 @@ class _VendorHomeScreenState extends State<VendorHomeScreen> {
       return Map<String, dynamic>.from(nestedUser);
     }
     return args;
+  }
+
+  Future<void> _refreshCurrentTabIfStale() async {
+    await _refreshCurrentTab(force: false);
+  }
+
+  Future<void> _refreshCurrentTab({required bool force}) async {
+    if (!mounted) return;
+    final user = _extractUser(Get.arguments);
+    final email = (user['email'] as String?)?.trim() ?? 'vendor';
+    final maxAge = force ? const Duration(seconds: 0) : const Duration(seconds: 20);
+
+    if (_selectedIndex == 0) {
+      final tag = 'vendor-hotel-$email';
+      if (Get.isRegistered<VendorHotelController>(tag: tag)) {
+        final controller = Get.find<VendorHotelController>(tag: tag);
+        await controller.refreshIfStale(maxAge: maxAge);
+      }
+      return;
+    }
+
+    if (_selectedIndex == 1) {
+      final tag = 'vendor-room-$email';
+      if (Get.isRegistered<VendorRoomController>(tag: tag)) {
+        final controller = Get.find<VendorRoomController>(tag: tag);
+        await controller.refreshIfStale(maxAge: maxAge);
+      }
+      return;
+    }
+
+    if (_selectedIndex == 2) {
+      final tag = 'vendor-booking-$email';
+      if (Get.isRegistered<BookingController>(tag: tag)) {
+        final controller = Get.find<BookingController>(tag: tag);
+        await controller.refreshIfStale(maxAge: maxAge);
+      }
+    }
   }
 }

@@ -24,6 +24,7 @@ class CustomerBookingController extends GetxController {
   final sortBy = 'id'.obs;
   final direction = 'asc'.obs;
   final availabilityFilter = RxnBool();
+  DateTime? _lastSuccessfulFetchAt;
 
   @override
   void onInit() {
@@ -63,10 +64,21 @@ class CustomerBookingController extends GetxController {
       page.value = result.page;
       totalPages.value = result.totalPages <= 0 ? 1 : result.totalPages;
       totalElements.value = result.totalElements;
+      _lastSuccessfulFetchAt = DateTime.now();
     } catch (_) {
       errorMessage.value = 'Unable to load rooms. Please try again.';
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> refreshIfStale({
+    Duration maxAge = const Duration(seconds: 20),
+    bool resetPage = false,
+  }) async {
+    final last = _lastSuccessfulFetchAt;
+    if (last == null || DateTime.now().difference(last) >= maxAge) {
+      await fetchRooms(resetPage: resetPage);
     }
   }
 

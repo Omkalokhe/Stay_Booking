@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:stay_booking_frontend/controller/profile_controller.dart';
 import 'package:stay_booking_frontend/routes/app_routes.dart';
-import 'package:get/get.dart';
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({required this.user, super.key});
@@ -35,6 +35,7 @@ class ProfileTab extends StatelessWidget {
 
       return Scaffold(
         appBar: AppBar(
+          backgroundColor: Color(0xFF3F1D89),
           toolbarHeight: 60,
           titleSpacing: 12,
           title: Row(
@@ -61,7 +62,8 @@ class ProfileTab extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
                       ),
                     ),
                     Text(
@@ -70,7 +72,7 @@ class ProfileTab extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(
                         context,
-                      ).textTheme.bodySmall?.copyWith(color: Colors.black54),
+                      ).textTheme.bodySmall?.copyWith(color: Colors.white),
                     ),
                   ],
                 ),
@@ -86,7 +88,10 @@ class ProfileTab extends StatelessWidget {
                 ),
                 onPressed: () => Get.offAllNamed(AppRoutes.login),
                 icon: const Icon(Icons.logout_rounded),
-                label: const Text('Logout'),
+                label: const Text(
+                  'Logout',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
             ),
           ],

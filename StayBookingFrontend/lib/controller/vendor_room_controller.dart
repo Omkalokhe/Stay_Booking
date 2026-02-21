@@ -31,9 +31,10 @@ class VendorRoomController extends GetxController {
   final size = 10.obs;
   final totalPages = 1.obs;
   final totalElements = 0.obs;
-  final sortBy = 'id'.obs;
-  final direction = 'asc'.obs;
+  final sortBy = 'updatedat'.obs;
+  final direction = 'desc'.obs;
   final availabilityFilter = RxnBool();
+  DateTime? _lastSuccessfulFetchAt;
 
   final formKey = GlobalKey<FormState>();
   final hotelIdController = TextEditingController();
@@ -89,6 +90,7 @@ class VendorRoomController extends GetxController {
       page.value = result.page;
       totalPages.value = result.totalPages <= 0 ? 1 : result.totalPages;
       totalElements.value = result.totalElements;
+      _lastSuccessfulFetchAt = DateTime.now();
     } catch (_) {
       errorMessage.value = 'Unable to load rooms. Please try again.';
     } finally {
@@ -100,6 +102,16 @@ class VendorRoomController extends GetxController {
     if (page.value <= 0) return;
     page.value -= 1;
     await fetchRooms();
+  }
+
+  Future<void> refreshIfStale({
+    Duration maxAge = const Duration(seconds: 20),
+    bool resetPage = false,
+  }) async {
+    final last = _lastSuccessfulFetchAt;
+    if (last == null || DateTime.now().difference(last) >= maxAge) {
+      await fetchRooms(resetPage: resetPage);
+    }
   }
 
   Future<void> goToNextPage() async {
@@ -304,8 +316,8 @@ class VendorRoomController extends GetxController {
   void resetFilters() {
     searchController.clear();
     hotelNameFilterController.clear();
-    sortBy.value = 'id';
-    direction.value = 'asc';
+    sortBy.value = 'updatedat';
+    direction.value = 'desc';
     availabilityFilter.value = null;
   }
 

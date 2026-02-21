@@ -82,7 +82,7 @@ class RegisterScreen extends StatelessWidget {
                                     'Role',
                                     Icons.badge_outlined,
                                   ),
-                                  items: AppRole.values
+                                  items: const [AppRole.customer, AppRole.vendor]
                                       .map(
                                         (appRole) => DropdownMenuItem<AppRole>(
                                           value: appRole,
