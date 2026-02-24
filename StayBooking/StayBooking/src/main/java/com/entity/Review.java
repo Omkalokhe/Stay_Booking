@@ -1,5 +1,6 @@
 package com.entity;
 
+import com.dto.ReviewResponse;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,6 +12,8 @@ import java.time.ZoneOffset;
 @Table(name = "reviews", indexes = {
         @Index(name = "idx_review_hotel_id", columnList = "hotel_id"),
         @Index(name = "idx_review_user_id", columnList = "user_id")
+}, uniqueConstraints = {
+        @UniqueConstraint(name = "uk_review_hotel_user", columnNames = {"hotel_id", "user_id"})
 })
 @Data
 @NoArgsConstructor
@@ -54,4 +57,6 @@ public class Review {
     public void preUpdate() {
         updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
     }
+
+
 }

@@ -23,5 +23,13 @@ public interface AdminService {
     ResponseEntity<?> updateRoomStatus(int roomId, AdminUpdateRoomStatusRequestDto requestDto);
 
     ResponseEntity<?> deleteRoom(int roomId);
+
+    ResponseEntity<?> getReviews(int page,
+                                 int size,
+                                 String sortBy,
+                                 String direction,
+                                 Integer rating,
+                                 String search);
+
 }
 

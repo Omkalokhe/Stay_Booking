@@ -5,8 +5,10 @@ import 'package:get/get.dart';
 import 'package:stay_booking_frontend/controller/admin/admin_hotels_controller.dart';
 import 'package:stay_booking_frontend/controller/admin/admin_rooms_controller.dart';
 import 'package:stay_booking_frontend/controller/admin/admin_users_controller.dart';
+import 'package:stay_booking_frontend/controller/review/review_controller.dart';
 import 'package:stay_booking_frontend/view/admin/tabs/admin_hotels_tab.dart';
 import 'package:stay_booking_frontend/view/admin/tabs/admin_profile_tab.dart';
+import 'package:stay_booking_frontend/view/admin/tabs/admin_review_tab.dart';
 import 'package:stay_booking_frontend/view/admin/tabs/admin_rooms_tab.dart';
 import 'package:stay_booking_frontend/view/admin/tabs/admin_users_tab.dart';
 
@@ -71,6 +73,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                 AdminUsersTab(user: user),
                 AdminHotelsTab(user: user),
                 AdminRoomsTab(user: user),
+                AdminReviewTab(user: user),
                 AdminProfileTab(user: user),
               ],
             ),
@@ -95,6 +98,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                 label: 'Room',
               ),
               NavigationDestination(
+                icon: Icon(Icons.rate_review_outlined),
+                selectedIcon: Icon(Icons.rate_review),
+                label: 'Review',
+              ),
+              NavigationDestination(
                 icon: Icon(Icons.person_outline_rounded),
                 selectedIcon: Icon(Icons.person_rounded),
                 label: 'Profile',
@@ -112,7 +120,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
 
   Future<void> _refreshCurrentTab({required bool force}) async {
     if (!mounted) return;
-    final maxAge = force ? const Duration(seconds: 0) : const Duration(seconds: 20);
+    final maxAge = force
+        ? const Duration(seconds: 0)
+        : const Duration(seconds: 20);
 
     if (_selectedIndex == 0) {
       const tag = 'admin-users-controller';
@@ -137,6 +147,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
       if (Get.isRegistered<AdminRoomsController>(tag: tag)) {
         final controller = Get.find<AdminRoomsController>(tag: tag);
         await controller.refreshIfStale(maxAge: maxAge);
+      }
+    }
+    if (_selectedIndex == 3) {
+      const tag = 'admin-reviews-controller';
+      if (Get.isRegistered<ReviewController>(tag: tag)) {
+        final controller = Get.find<ReviewController>(tag: tag);
+        await controller.refreshAdminReviews();
       }
     }
   }

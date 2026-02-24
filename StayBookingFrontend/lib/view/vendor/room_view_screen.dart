@@ -8,6 +8,7 @@ import 'package:stay_booking_frontend/model/create_booking_request_dto.dart';
 import 'package:stay_booking_frontend/model/room_response_dto.dart';
 import 'package:stay_booking_frontend/service/booking/booking_service.dart';
 import 'package:stay_booking_frontend/service/room/room_service.dart';
+import 'package:stay_booking_frontend/view/review/widgets/hotel_reviews_section.dart';
 
 class RoomViewScreen extends StatefulWidget {
   const RoomViewScreen({required this.room, this.user, super.key});
@@ -148,6 +149,18 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
                           color: Colors.black87,
                           height: 1.4,
                         ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _detailCard(
+                    title: 'Guest Reviews',
+                    children: [
+                      HotelReviewsSection(
+                        hotelId: room.hotelId,
+                        hotelName: hotelName,
+                        currentUser: widget.user ?? const <String, dynamic>{},
+                        tagPrefix: 'hotel-reviews-room',
                       ),
                     ],
                   ),

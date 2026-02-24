@@ -4,6 +4,7 @@ import 'package:stay_booking_frontend/controller/booking/booking_controller.dart
 import 'package:stay_booking_frontend/model/booking_response_dto.dart';
 import 'package:stay_booking_frontend/model/update_booking_request_dto.dart';
 import 'package:stay_booking_frontend/model/update_booking_status_request_dto.dart';
+import 'package:stay_booking_frontend/view/review/hotel_review_screen.dart';
 
 class BookingTab extends StatefulWidget {
   const BookingTab({required this.user, super.key});
@@ -762,10 +763,21 @@ class _BookingTabState extends State<BookingTab> {
     );
   }
 
+  Future<void> _openHotelReviewScreen(BookingResponseDto booking) async {
+    await Get.to(
+      () => HotelReviewScreen(
+        hotelId: booking.hotelId,
+        hotelName: booking.hotelName,
+        currentUser: widget.user,
+      ),
+    );
+  }
+
   Widget _buildBookingCard(BookingResponseDto booking) {
     final menuItems = <PopupMenuEntry<String>>[
       const PopupMenuItem(value: 'view', child: Text('View')),
       const PopupMenuItem(value: 'edit', child: Text('Edit')),
+      const PopupMenuItem(value: 'review', child: Text('Review Hotel')),
       if (_canUpdateStatus)
         const PopupMenuItem(value: 'status', child: Text('Update Status')),
       if (_canPayBooking(booking))
@@ -811,6 +823,9 @@ class _BookingTabState extends State<BookingTab> {
                   onSelected: (value) async {
                     if (value == 'view') await _openBookingDetails(booking);
                     if (value == 'edit') await _openUpdateBookingSheet(booking);
+                    if (value == 'review') {
+                      await _openHotelReviewScreen(booking);
+                    }
                     if (value == 'status' && _canUpdateStatus) {
                       await _openStatusUpdateSheet(booking);
                     }

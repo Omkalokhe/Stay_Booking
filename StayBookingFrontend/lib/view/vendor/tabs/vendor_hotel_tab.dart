@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:stay_booking_frontend/controller/vendor_hotel_controller.dart';
 import 'package:stay_booking_frontend/model/hotel_response_dto.dart';
 import 'package:stay_booking_frontend/routes/app_routes.dart';
-import 'package:get/get.dart';
 
 class VendorHotelTab extends StatelessWidget {
   const VendorHotelTab({required this.user, super.key});
@@ -591,20 +591,21 @@ class VendorHotelTab extends StatelessWidget {
                             ),
                           ),
                         ),
-                        _formField(
-                          width: width,
-                          child: TextFormField(
-                            controller: controller.ratingController,
-                            validator: controller.validateRating,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            decoration: _inputDecoration(
-                              'Rating (0-5)',
-                              Icons.star_outline_rounded,
-                            ),
-                          ),
-                        ),
+                        // _formField(
+                        //   width: width,
+                        //   child: TextFormField(
+                        //     readOnly: true,
+                        //     controller: controller.ratingController,
+                        //     validator: controller.validateRating,
+                        //     keyboardType: const TextInputType.numberWithOptions(
+                        //       decimal: true,
+                        //     ),
+                        //     decoration: _inputDecoration(
+                        //       'Rating (0-5)',
+                        //       Icons.star_outline_rounded,
+                        //     ),
+                        //   ),
+                        // ),
                         _formField(
                           width: constraints.maxWidth,
                           child: TextFormField(

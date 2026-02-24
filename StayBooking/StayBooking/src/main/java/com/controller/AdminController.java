@@ -107,5 +107,17 @@ public class AdminController {
     public ResponseEntity<?> deleteRoom(@PathVariable int roomId) {
         return adminService.deleteRoom(roomId);
     }
+
+    @GetMapping("/reviews")
+    public ResponseEntity<?> getReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "desc") String direction,
+            @RequestParam(required = false) Integer rating,
+            @RequestParam(required = false) String search
+    ) {
+        return adminService.getReviews(page, size, sortBy, direction, rating, search);
+    }
 }
 

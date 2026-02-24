@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:stay_booking_frontend/controller/booking/booking_controller.dart';
 import 'package:stay_booking_frontend/controller/vendor_hotel_controller.dart';
 import 'package:stay_booking_frontend/controller/vendor_room_controller.dart';
@@ -8,7 +9,6 @@ import 'package:stay_booking_frontend/view/vendor/tabs/vendor_booking_tab.dart';
 import 'package:stay_booking_frontend/view/vendor/tabs/vendor_hotel_tab.dart';
 import 'package:stay_booking_frontend/view/vendor/tabs/vendor_profile_tab_screen.dart';
 import 'package:stay_booking_frontend/view/vendor/tabs/vendor_room_tab.dart';
-import 'package:get/get.dart';
 
 class VendorHomeScreen extends StatefulWidget {
   const VendorHomeScreen({super.key});
@@ -147,7 +147,9 @@ class _VendorHomeScreenState extends State<VendorHomeScreen>
     if (!mounted) return;
     final user = _extractUser(Get.arguments);
     final email = (user['email'] as String?)?.trim() ?? 'vendor';
-    final maxAge = force ? const Duration(seconds: 0) : const Duration(seconds: 20);
+    final maxAge = force
+        ? const Duration(seconds: 0)
+        : const Duration(seconds: 20);
 
     if (_selectedIndex == 0) {
       final tag = 'vendor-hotel-$email';

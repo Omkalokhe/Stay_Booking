@@ -2,7 +2,7 @@ class ApiEndpoints {
   static const String _baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     // defaultValue: 'http://localhost:8080',
-    defaultValue: "http://192.168.1.5:8080",
+    defaultValue: "http://10.180.53.104:8080",
   );
 
   static Uri login() => Uri.parse('$_baseUrl/api/auth/login');
@@ -254,4 +254,34 @@ class ApiEndpoints {
 
   static Uri verifyRazorpayPayment() =>
       Uri.parse('$_baseUrl/api/payments/razorpay/verify');
+
+  static Uri createReview() => Uri.parse('$_baseUrl/api/reviews');
+
+  static Uri getReviewsByHotelId(int hotelId) =>
+      Uri.parse('$_baseUrl/api/reviews/hotel/$hotelId');
+
+  /// ================= ADMIN REVIEWS =================
+
+  static Uri getAdminReviews({
+    required int page,
+    required int size,
+    String? sortBy,
+    String? direction,
+    int? rating,
+    String? search,
+  }) {
+    return Uri.parse('$_baseUrl/api/admin/reviews').replace(
+      queryParameters: {
+        'page': '$page',
+        'size': '$size',
+        if ((sortBy ?? '').trim().isNotEmpty) 'sortBy': sortBy!.trim(),
+        if ((direction ?? '').trim().isNotEmpty) 'direction': direction!.trim(),
+        if (rating != null) 'rating': '$rating',
+        if ((search ?? '').trim().isNotEmpty) 'search': search!.trim(),
+      },
+    );
+  }
+
+  static Uri deleteReview(int reviewId) =>
+      Uri.parse('$_baseUrl/api/reviews/$reviewId');
 }

@@ -1,17 +1,14 @@
 package com.serviceImpl;
 
-import com.dto.AdminUpdateRoomStatusRequestDto;
-import com.dto.AdminUpdateUserAccessRequestDto;
-import com.dto.HotelResponseDto;
-import com.dto.PageResponseDto;
-import com.dto.RoomResponseDto;
-import com.dto.UserDto;
+import com.dto.*;
 import com.entity.Hotel;
+import com.entity.Review;
 import com.entity.Room;
 import com.entity.User;
 import com.enums.Role;
 import com.enums.UserStatus;
 import com.repository.HotelRepository;
+import com.repository.ReviewRepository;
 import com.repository.RoomRepository;
 import com.repository.UserRepository;
 import com.service.AdminService;
@@ -40,15 +37,18 @@ public class AdminServiceImpl implements AdminService {
     private final HotelRepository hotelRepository;
     private final RoomRepository roomRepository;
     private final RoomPhotoStorageService roomPhotoStorageService;
+    private final ReviewRepository reviewRepository;
 
     public AdminServiceImpl(UserRepository userRepository,
                             HotelRepository hotelRepository,
                             RoomRepository roomRepository,
+                            ReviewRepository reviewRepository,
                             RoomPhotoStorageService roomPhotoStorageService) {
         this.userRepository = userRepository;
         this.hotelRepository = hotelRepository;
         this.roomRepository = roomRepository;
         this.roomPhotoStorageService = roomPhotoStorageService;
+        this.reviewRepository = reviewRepository;
     }
 
     @Override
@@ -349,6 +349,78 @@ public class AdminServiceImpl implements AdminService {
             case "hotelName" -> "hotel.name";
             default -> "id";
         };
+    }
+
+    @Override
+    public ResponseEntity<?> getReviews(int page,
+                                        int size,
+                                        String sortBy,
+                                        String direction,
+                                        Integer rating,
+                                        String search) {
+
+        Pageable pageable = buildPageable(page, size, normalizeReviewSortBy(sortBy), direction);
+
+        Specification<Review> specification = (root, query, cb) -> {
+
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+
+            if (rating != null) {
+                predicates.add(cb.equal(root.get("rating"), rating));
+            }
+
+            if (!isBlank(search)) {
+                String pattern = "%" + search.trim().toLowerCase() + "%";
+
+                predicates.add(
+                        cb.or(
+                                cb.like(cb.lower(root.get("reviewText")), pattern),
+                                cb.like(cb.lower(root.get("user").get("fname")), pattern),
+                                cb.like(cb.lower(root.get("user").get("lname")), pattern),
+                                cb.like(cb.lower(root.get("hotel").get("name")), pattern)
+                        )
+                );
+            }
+
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+
+        Page<Review> reviewPage = reviewRepository.findAll(specification, pageable);
+
+        PageResponseDto<ReviewResponse> response = PageResponseDto.<ReviewResponse>builder()
+                .content(reviewPage.getContent().stream().map(this::mapToResponse).toList())
+                .page(reviewPage.getNumber())
+                .size(reviewPage.getSize())
+                .totalElements(reviewPage.getTotalElements())
+                .totalPages(reviewPage.getTotalPages())
+                .first(reviewPage.isFirst())
+                .last(reviewPage.isLast())
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    private String normalizeReviewSortBy(String sortBy) {
+        if (isBlank(sortBy)) return "createdAt";
+
+        return switch (sortBy.trim()) {
+            case "id", "rating", "createdAt" -> sortBy.trim();
+            default -> "createdAt";
+        };
+    }
+
+    public ReviewResponse mapToResponse(Review review) {
+
+        return ReviewResponse.builder()
+                .id(review.getId())
+                .hotelId(review.getHotel().getId())
+                .userId(review.getUser().getId())
+                .userName(review.getUser().getFname())
+                .reviewText(review.getReviewText())
+                .rating(review.getRating())
+                .createdAt(review.getCreatedAt())
+                .updatedAt(review.getUpdatedAt())
+                .build();
     }
 
     private String normalizeFilter(String value) {
