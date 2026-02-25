@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:stay_booking_frontend/controller/auth_controller.dart';
 import 'package:stay_booking_frontend/routes/app_routes.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -47,7 +48,18 @@ class _SplashScreenState extends State<SplashScreen>
   void _navigate() {
     if (!mounted || _hasNavigated) return;
     _hasNavigated = true;
-    Get.offNamed(AppRoutes.login);
+    final auth = Get.find<AuthController>();
+    if (!auth.isAuthenticated) {
+      Get.offNamed(AppRoutes.login);
+      return;
+    }
+
+    final route = switch (auth.currentRole) {
+      'ADMIN' => AppRoutes.adminHome,
+      'VENDOR' => AppRoutes.vendorHome,
+      _ => AppRoutes.home,
+    };
+    Get.offNamed(route, arguments: auth.currentUser);
   }
 
   @override

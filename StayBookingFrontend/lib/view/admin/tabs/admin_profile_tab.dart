@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:stay_booking_frontend/routes/app_routes.dart';
+import 'package:stay_booking_frontend/controller/auth_controller.dart';
 
 class AdminProfileTab extends StatelessWidget {
   const AdminProfileTab({required this.user, super.key});
@@ -9,6 +9,7 @@ class AdminProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authController = Get.find<AuthController>();
     final email = (user['email'] as String?)?.trim() ?? 'admin@gmail.com';
 
     return Scaffold(
@@ -24,7 +25,10 @@ class AdminProfileTab extends StatelessWidget {
                 backgroundColor: const Color(0xFFC62828),
                 foregroundColor: Colors.white,
               ),
-              onPressed: () => Get.offAllNamed(AppRoutes.login),
+              onPressed: () => authController.logout(
+                redirectToLogin: true,
+                showMessage: false,
+              ),
               icon: const Icon(Icons.logout_rounded),
               label: const Text('Logout'),
             ),

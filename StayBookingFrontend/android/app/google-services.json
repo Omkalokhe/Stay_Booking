@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "509057777853",
+    "project_id": "staybook-14a06",
+    "storage_bucket": "staybook-14a06.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:509057777853:android:95c6e4d7c275e11e6877d4",
+        "android_client_info": {
+          "package_name": "com.example.staybookingfrontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwAot-VvnSz1joFgZokDut3vMiSsS7ra0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

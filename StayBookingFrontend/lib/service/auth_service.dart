@@ -1,4 +1,5 @@
 export 'package:stay_booking_frontend/service/auth/login_service.dart';
+export 'package:stay_booking_frontend/service/auth/auth_storage_service.dart';
 export 'package:stay_booking_frontend/service/auth/password_service.dart';
 export 'package:stay_booking_frontend/service/auth/register_service.dart';
 export 'package:stay_booking_frontend/service/core/api_endpoints.dart';

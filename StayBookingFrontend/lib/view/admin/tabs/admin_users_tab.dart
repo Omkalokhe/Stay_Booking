@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:stay_booking_frontend/controller/admin/admin_users_controller.dart';
 import 'package:stay_booking_frontend/model/admin/admin_user_dto.dart';
+import 'package:stay_booking_frontend/view/widgets/notification_bell_action.dart';
 
 class AdminUsersTab extends StatefulWidget {
   const AdminUsersTab({required this.user, super.key});
@@ -58,6 +59,7 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
         titleSpacing: 16,
         title: _buildSearchBar(),
         actions: [
+          const NotificationBellAction(),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: IconButton.filledTonal(

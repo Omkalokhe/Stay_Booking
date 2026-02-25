@@ -29,7 +29,17 @@ public class SmtpEmailServiceImpl implements EmailService {
         String safeName = (userName == null || userName.trim().isEmpty()) ? "User" : userName.trim();
         String subject = "Your StayBooking password reset OTP";
         String htmlBody = buildPasswordResetHtml(safeName, otpCode, expiryMinutes);
+        sendHtmlEmail(toEmail, subject, htmlBody, "password reset OTP");
+    }
 
+    @Override
+    public void sendNotificationEmail(String toEmail, String userName, String subject, String headline, String message) {
+        String safeName = (userName == null || userName.trim().isEmpty()) ? "User" : userName.trim();
+        String htmlBody = buildNotificationHtml(safeName, headline, message);
+        sendHtmlEmail(toEmail, subject, htmlBody, "notification");
+    }
+
+    private void sendHtmlEmail(String toEmail, String subject, String htmlBody, String emailType) {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
@@ -38,10 +48,10 @@ public class SmtpEmailServiceImpl implements EmailService {
             helper.setSubject(subject);
             helper.setText(htmlBody, true);
             mailSender.send(mimeMessage);
-            LOGGER.info("Password reset OTP email sent successfully to {}", toEmail);
+            LOGGER.info("{} email sent successfully to {}", emailType, toEmail);
         } catch (MessagingException | MailException ex) {
-            LOGGER.error("Failed to send password reset OTP email to {}. Reason: {}", toEmail, ex.getMessage(), ex);
-            throw new IllegalStateException("Failed to send password reset OTP email", ex);
+            LOGGER.error("Failed to send {} email to {}. Reason: {}", emailType, toEmail, ex.getMessage(), ex);
+            throw new IllegalStateException("Failed to send " + emailType + " email", ex);
         }
     }
 
@@ -59,5 +69,18 @@ public class SmtpEmailServiceImpl implements EmailService {
                   </body>
                 </html>
                 """.formatted(userName, otpCode, expiryMinutes);
+    }
+
+    private String buildNotificationHtml(String userName, String headline, String message) {
+        return """
+                <html>
+                  <body style="font-family: Arial, sans-serif; color: #1f2937;">
+                    <p>Hi %s,</p>
+                    <p style="font-size: 18px; font-weight: 700; color: #0f766e;">%s</p>
+                    <p>%s</p>
+                    <p>Thank you,<br/>StayBooking Team</p>
+                  </body>
+                </html>
+                """.formatted(userName, headline, message);
     }
 }

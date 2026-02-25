@@ -5,6 +5,7 @@ import 'package:stay_booking_frontend/model/booking_response_dto.dart';
 import 'package:stay_booking_frontend/model/update_booking_request_dto.dart';
 import 'package:stay_booking_frontend/model/update_booking_status_request_dto.dart';
 import 'package:stay_booking_frontend/view/review/hotel_review_screen.dart';
+import 'package:stay_booking_frontend/view/widgets/notification_bell_action.dart';
 
 class BookingTab extends StatefulWidget {
   const BookingTab({required this.user, super.key});
@@ -47,6 +48,7 @@ class _BookingTabState extends State<BookingTab> {
         titleSpacing: 15,
         title: _buildSearchBar(),
         actions: [
+          const NotificationBellAction(),
           IconButton(
             onPressed: _openFilterSheet,
             icon: const Icon(Icons.filter_alt_outlined),

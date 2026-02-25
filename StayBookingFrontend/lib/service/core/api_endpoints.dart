@@ -2,7 +2,7 @@ class ApiEndpoints {
   static const String _baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     // defaultValue: 'http://localhost:8080',
-    defaultValue: "http://10.180.53.104:8080",
+    defaultValue: "http://192.168.1.11:8080",
   );
 
   static Uri login() => Uri.parse('$_baseUrl/api/auth/login');
@@ -284,4 +284,27 @@ class ApiEndpoints {
 
   static Uri deleteReview(int reviewId) =>
       Uri.parse('$_baseUrl/api/reviews/$reviewId');
+
+  static Uri getNotifications({
+    required int page,
+    required int size,
+    required bool unreadOnly,
+  }) {
+    return Uri.parse('$_baseUrl/api/notifications').replace(
+      queryParameters: {
+        'page': '$page',
+        'size': '$size',
+        'unreadOnly': '$unreadOnly',
+      },
+    );
+  }
+
+  static Uri getUnreadNotificationCount() =>
+      Uri.parse('$_baseUrl/api/notifications/unread-count');
+
+  static Uri markNotificationAsRead(int id) =>
+      Uri.parse('$_baseUrl/api/notifications/$id/read');
+
+  static Uri markAllNotificationsAsRead() =>
+      Uri.parse('$_baseUrl/api/notifications/read-all');
 }

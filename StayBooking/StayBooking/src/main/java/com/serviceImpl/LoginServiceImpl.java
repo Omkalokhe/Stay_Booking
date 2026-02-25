@@ -7,6 +7,7 @@ import com.entity.User;
 import com.enums.UserStatus;
 import com.repository.UserRepository;
 import com.service.LoginService;
+import com.security.JwtService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,10 +19,12 @@ public class LoginServiceImpl implements LoginService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public LoginServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public LoginServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @Override
@@ -61,10 +64,14 @@ public class LoginServiceImpl implements LoginService {
 
         UserDto userDto = new UserDto();
         BeanUtils.copyProperties(user, userDto);
+        String accessToken = jwtService.generateAccessToken(user);
 
         LoginResponseDto response = LoginResponseDto.builder()
                 .message("Login successful")
                 .user(userDto)
+                .tokenType("Bearer")
+                .accessToken(accessToken)
+                .expiresInMinutes(jwtService.getAccessTokenExpiryMinutes())
                 .build();
         return ResponseEntity.ok(response);
     }

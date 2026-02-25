@@ -7,9 +7,10 @@ import 'package:stay_booking_frontend/service/core/api_endpoints.dart';
 import 'package:stay_booking_frontend/service/core/service_parser.dart';
 import 'package:stay_booking_frontend/service/core/service_results.dart';
 import 'package:http/http.dart' as http;
+import 'package:stay_booking_frontend/service/core/http_client.dart';
 
 class HotelService {
-  HotelService({http.Client? client}) : _client = client ?? http.Client();
+  HotelService({http.Client? client}) : _client = client ?? HttpClient.instance;
 
   final http.Client _client;
   final ServiceParser _parser = ServiceParser();

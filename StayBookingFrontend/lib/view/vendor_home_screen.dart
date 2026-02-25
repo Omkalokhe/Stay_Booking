@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:stay_booking_frontend/controller/auth_controller.dart';
 import 'package:stay_booking_frontend/controller/booking/booking_controller.dart';
+import 'package:stay_booking_frontend/controller/notification_controller.dart';
 import 'package:stay_booking_frontend/controller/vendor_hotel_controller.dart';
 import 'package:stay_booking_frontend/controller/vendor_room_controller.dart';
 import 'package:stay_booking_frontend/view/vendor/tabs/vendor_booking_tab.dart';
@@ -19,6 +21,9 @@ class VendorHomeScreen extends StatefulWidget {
 
 class _VendorHomeScreenState extends State<VendorHomeScreen>
     with WidgetsBindingObserver {
+  final AuthController _authController = Get.find<AuthController>();
+  final NotificationController _notificationController =
+      Get.find<NotificationController>();
   int _selectedIndex = 0;
   bool _initializedFromArgs = false;
   Timer? _autoRefreshTimer;
@@ -42,6 +47,7 @@ class _VendorHomeScreenState extends State<VendorHomeScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      _notificationController.refreshOnAppResume();
       _refreshCurrentTab(force: true);
     }
   }
@@ -142,7 +148,9 @@ class _VendorHomeScreenState extends State<VendorHomeScreen>
   }
 
   Map<String, dynamic> _extractUser(dynamic rawArgs) {
-    if (rawArgs is! Map) return <String, dynamic>{};
+    if (rawArgs is! Map) {
+      return Map<String, dynamic>.from(_authController.currentUser);
+    }
     final args = Map<String, dynamic>.from(rawArgs);
     final nestedUser = args['user'];
     if (nestedUser is Map) {

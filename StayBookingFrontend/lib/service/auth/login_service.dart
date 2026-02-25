@@ -25,12 +25,21 @@ class LoginService {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       final loginResponse = decoded is Map<String, dynamic>
           ? LoginResponseDto.fromJson(decoded)
-          : LoginResponseDto(message: 'Login successful', user: null);
+          : LoginResponseDto(
+              message: 'Login successful',
+              user: null,
+              tokenType: 'Bearer',
+              accessToken: '',
+              expiresInMinutes: 0,
+            );
 
       return LoginResult(
         success: true,
         message: loginResponse.message,
         user: loginResponse.user,
+        tokenType: loginResponse.tokenType,
+        accessToken: loginResponse.accessToken,
+        expiresInMinutes: loginResponse.expiresInMinutes,
       );
     }
 
@@ -39,6 +48,9 @@ class LoginService {
       message: _parser.extractMessage(decoded) ??
           'Login failed (${response.statusCode})${response.body.trim().isNotEmpty ? ': ${response.body}' : ''}',
       user: null,
+      tokenType: '',
+      accessToken: '',
+      expiresInMinutes: 0,
     );
   }
 }

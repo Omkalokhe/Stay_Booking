@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:stay_booking_frontend/controller/auth_controller.dart';
 import 'package:stay_booking_frontend/controller/customer_booking_controller.dart';
 import 'package:stay_booking_frontend/model/room_response_dto.dart';
+import 'package:stay_booking_frontend/routes/app_routes.dart';
 import 'package:stay_booking_frontend/view/vendor/room_view_screen.dart';
+import 'package:stay_booking_frontend/view/widgets/notification_bell_action.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({required this.user, super.key});
@@ -11,6 +14,7 @@ class HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authController = Get.find<AuthController>();
     const tag = 'customer-booking';
     final roomController = Get.isRegistered<CustomerBookingController>(tag: tag)
         ? Get.find<CustomerBookingController>(tag: tag)
@@ -26,6 +30,20 @@ class HomeTab extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           child: _searchAndFilters(context, roomController),
         ),
+        actions: [
+          if (authController.isAuthenticated) const NotificationBellAction(),
+          if (!authController.isAuthenticated)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: TextButton(
+                onPressed: () => Get.toNamed(AppRoutes.login),
+                child: const Text(
+                  'Login',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+        ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

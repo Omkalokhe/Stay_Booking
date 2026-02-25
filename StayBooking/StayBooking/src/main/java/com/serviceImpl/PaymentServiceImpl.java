@@ -12,6 +12,7 @@ import com.enums.PaymentMethod;
 import com.enums.PaymentStatus;
 import com.repository.BookingRepository;
 import com.repository.PaymentTransactionRepository;
+import com.service.NotificationService;
 import com.service.PaymentService;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -39,14 +40,17 @@ public class PaymentServiceImpl implements PaymentService {
     private final BookingRepository bookingRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final RazorpayProperties razorpayProperties;
+    private final NotificationService notificationService;
     private final RestTemplate restTemplate = new RestTemplate();
 
     public PaymentServiceImpl(BookingRepository bookingRepository,
                               PaymentTransactionRepository paymentTransactionRepository,
-                              RazorpayProperties razorpayProperties) {
+                              RazorpayProperties razorpayProperties,
+                              NotificationService notificationService) {
         this.bookingRepository = bookingRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.razorpayProperties = razorpayProperties;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -190,6 +194,9 @@ public class PaymentServiceImpl implements PaymentService {
                 razorpayProperties.getKeySecret()
         );
 
+        BookingStatus previousBookingStatus = booking.getBookingStatus();
+        PaymentStatus previousPaymentStatus = booking.getPaymentStatus();
+
         if (!expectedSignature.equals(requestDto.getRazorpaySignature())) {
             tx.setPaymentStatus(PaymentStatus.FAILED);
             tx.setProviderPaymentId(requestDto.getRazorpayPaymentId());
@@ -200,6 +207,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             booking.setPaymentStatus(PaymentStatus.FAILED);
             bookingRepository.save(booking);
+            notificationService.sendBookingStateChangeNotifications(booking, previousBookingStatus, previousPaymentStatus);
 
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Invalid payment signature. Payment verification failed.");
@@ -219,6 +227,7 @@ public class PaymentServiceImpl implements PaymentService {
             booking.setBookingStatus(BookingStatus.CONFIRMED);
         }
         bookingRepository.save(booking);
+        notificationService.sendBookingStateChangeNotifications(booking, previousBookingStatus, previousPaymentStatus);
 
         VerifyRazorpayPaymentResponseDto responseDto = buildVerifyResponse(
                 booking,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:stay_booking_frontend/controller/auth_controller.dart';
 
 import 'package:stay_booking_frontend/model/forgot_password_request_dto.dart';
 import 'package:stay_booking_frontend/model/update_user_request_dto.dart';
@@ -18,6 +19,7 @@ class ProfileController extends GetxController {
   final Map<String, dynamic> initialUser;
   final UserProfileService _userProfileService;
   final PasswordService _passwordService;
+  final AuthController _authController = Get.find<AuthController>();
 
   final user = Rxn<Map<String, dynamic>>();
   final isLoading = false.obs;
@@ -175,7 +177,7 @@ class ProfileController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
       );
       await Future<void>.delayed(const Duration(milliseconds: 700));
-      Get.offAllNamed(AppRoutes.login);
+      await _authController.logout(redirectToLogin: true, showMessage: false);
     } catch (_) {
       errorMessage.value = 'Unable to delete profile. Please try again.';
     } finally {

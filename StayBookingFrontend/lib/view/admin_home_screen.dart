@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:stay_booking_frontend/controller/auth_controller.dart';
 import 'package:stay_booking_frontend/controller/admin/admin_hotels_controller.dart';
 import 'package:stay_booking_frontend/controller/admin/admin_rooms_controller.dart';
 import 'package:stay_booking_frontend/controller/admin/admin_users_controller.dart';
+import 'package:stay_booking_frontend/controller/notification_controller.dart';
 import 'package:stay_booking_frontend/controller/review/review_controller.dart';
 import 'package:stay_booking_frontend/view/admin/tabs/admin_hotels_tab.dart';
 import 'package:stay_booking_frontend/view/admin/tabs/admin_profile_tab.dart';
@@ -21,6 +23,9 @@ class AdminHomeScreen extends StatefulWidget {
 
 class _AdminHomeScreenState extends State<AdminHomeScreen>
     with WidgetsBindingObserver {
+  final AuthController _authController = Get.find<AuthController>();
+  final NotificationController _notificationController =
+      Get.find<NotificationController>();
   int _selectedIndex = 0;
   Timer? _autoRefreshTimer;
 
@@ -43,6 +48,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      _notificationController.refreshOnAppResume();
       _refreshCurrentTab(force: true);
     }
   }
@@ -60,7 +66,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     final rawArgs = Get.arguments;
     final user = rawArgs is Map
         ? Map<String, dynamic>.from(rawArgs)
-        : <String, dynamic>{};
+        : Map<String, dynamic>.from(_authController.currentUser);
 
     return SafeArea(
       top: false,

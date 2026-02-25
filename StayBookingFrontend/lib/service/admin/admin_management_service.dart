@@ -7,12 +7,13 @@ import 'package:stay_booking_frontend/model/core/paginated_response.dart';
 import 'package:stay_booking_frontend/model/hotel_response_dto.dart';
 import 'package:stay_booking_frontend/model/room_response_dto.dart';
 import 'package:stay_booking_frontend/service/core/api_endpoints.dart';
+import 'package:stay_booking_frontend/service/core/http_client.dart';
 import 'package:stay_booking_frontend/service/core/service_paged_result.dart';
 import 'package:stay_booking_frontend/service/core/service_parser.dart';
 import 'package:stay_booking_frontend/service/core/service_results.dart';
 
 class AdminManagementService {
-  AdminManagementService({http.Client? client}) : _client = client ?? http.Client();
+  AdminManagementService({http.Client? client}) : _client = client ?? HttpClient.instance;
 
   final http.Client _client;
   final ServiceParser _parser = ServiceParser();

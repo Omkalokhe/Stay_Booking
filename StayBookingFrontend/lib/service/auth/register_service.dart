@@ -2,12 +2,13 @@ import 'dart:convert';
 
 import 'package:stay_booking_frontend/model/register_user_request.dart';
 import 'package:stay_booking_frontend/service/core/api_endpoints.dart';
+import 'package:stay_booking_frontend/service/core/http_client.dart';
 import 'package:stay_booking_frontend/service/core/service_parser.dart';
 import 'package:stay_booking_frontend/service/core/service_results.dart';
 import 'package:http/http.dart' as http;
 
 class RegisterService {
-  RegisterService({http.Client? client}) : _client = client ?? http.Client();
+  RegisterService({http.Client? client}) : _client = client ?? HttpClient.instance;
 
   final http.Client _client;
   final ServiceParser _parser = ServiceParser();

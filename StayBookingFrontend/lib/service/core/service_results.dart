@@ -10,11 +10,17 @@ class LoginResult {
     required this.success,
     required this.message,
     this.user,
+    required this.tokenType,
+    required this.accessToken,
+    required this.expiresInMinutes,
   });
 
   final bool success;
   final String message;
   final Map<String, dynamic>? user;
+  final String tokenType;
+  final String accessToken;
+  final int expiresInMinutes;
 }
 
 class RegisterResult {

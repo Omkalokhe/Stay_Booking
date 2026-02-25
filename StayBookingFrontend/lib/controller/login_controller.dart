@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:stay_booking_frontend/controller/auth_controller.dart';
+import 'package:stay_booking_frontend/controller/notification_controller.dart';
 import 'package:stay_booking_frontend/model/app_role.dart';
 import 'package:stay_booking_frontend/model/login_request_dto.dart';
 import 'package:stay_booking_frontend/routes/app_routes.dart';
@@ -9,6 +11,9 @@ class LoginController extends GetxController {
     : _loginService = loginService ?? LoginService();
 
   final LoginService _loginService;
+  final AuthController _authController = Get.find<AuthController>();
+  final NotificationController _notificationController =
+      Get.find<NotificationController>();
   final email = ''.obs;
   final password = ''.obs;
   final role = AppRole.customer.obs;
@@ -49,8 +54,23 @@ class LoginController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
       );
       if (result.success) {
-        final roleValue =
-            (result.user?['role'] as String?)?.trim().toUpperCase() ?? '';
+        if (result.accessToken.trim().isEmpty) {
+          Get.snackbar(
+            'Error',
+            'Login succeeded but access token is missing.',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+          return;
+        }
+        await _authController.startSession(
+          tokenType: result.tokenType,
+          accessToken: result.accessToken,
+          expiresInMinutes: result.expiresInMinutes,
+          user: result.user ?? <String, dynamic>{},
+        );
+        await _notificationController.fetchUnreadCount();
+
+        final roleValue = _authController.currentRole;
         final targetRoute = switch (roleValue) {
           'ADMIN' => AppRoutes.adminHome,
           'VENDOR' => AppRoutes.vendorHome,

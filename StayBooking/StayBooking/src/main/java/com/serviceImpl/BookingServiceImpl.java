@@ -16,6 +16,7 @@ import com.repository.HotelRepository;
 import com.repository.RoomRepository;
 import com.repository.UserRepository;
 import com.service.BookingService;
+import com.service.NotificationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,15 +41,18 @@ public class BookingServiceImpl implements BookingService {
     private final UserRepository userRepository;
     private final HotelRepository hotelRepository;
     private final RoomRepository roomRepository;
+    private final NotificationService notificationService;
 
     public BookingServiceImpl(BookingRepository bookingRepository,
                               UserRepository userRepository,
                               HotelRepository hotelRepository,
-                              RoomRepository roomRepository) {
+                              RoomRepository roomRepository,
+                              NotificationService notificationService) {
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
         this.hotelRepository = hotelRepository;
         this.roomRepository = roomRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -120,6 +124,7 @@ public class BookingServiceImpl implements BookingService {
         booking.setPaymentStatus(PaymentStatus.PENDING);
 
         Booking saved = bookingRepository.save(booking);
+        notificationService.sendBookingCreatedNotifications(saved);
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(saved));
     }
 
@@ -203,6 +208,7 @@ public class BookingServiceImpl implements BookingService {
         booking.setTotalAmount(booking.getRoom().getPrice().multiply(BigDecimal.valueOf(nights)));
 
         Booking updated = bookingRepository.save(booking);
+        notificationService.sendBookingUpdatedNotifications(updated);
         return ResponseEntity.ok(toResponse(updated));
     }
 
@@ -222,6 +228,8 @@ public class BookingServiceImpl implements BookingService {
         }
 
         Booking booking = optionalBooking.get();
+        BookingStatus previousBookingStatus = booking.getBookingStatus();
+        PaymentStatus previousPaymentStatus = booking.getPaymentStatus();
         if (requestDto.getPaymentStatus() != null) {
             booking.setPaymentStatus(requestDto.getPaymentStatus());
             if (requestDto.getPaymentStatus() == PaymentStatus.SUCCESS && booking.getBookingStatus() == BookingStatus.PENDING) {
@@ -242,6 +250,7 @@ public class BookingServiceImpl implements BookingService {
         }
 
         Booking updated = bookingRepository.save(booking);
+        notificationService.sendBookingStateChangeNotifications(updated, previousBookingStatus, previousPaymentStatus);
         return ResponseEntity.ok(toResponse(updated));
     }
 
@@ -268,6 +277,7 @@ public class BookingServiceImpl implements BookingService {
         }
 
         Booking updated = bookingRepository.save(booking);
+        notificationService.sendBookingCancelledNotifications(updated);
         return ResponseEntity.ok(toResponse(updated));
     }
 

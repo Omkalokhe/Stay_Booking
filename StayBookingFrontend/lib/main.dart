@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:stay_booking_frontend/controller/auth_controller.dart';
+import 'package:stay_booking_frontend/controller/notification_controller.dart';
 import 'package:stay_booking_frontend/routes/app_routes.dart';
+import 'package:stay_booking_frontend/routes/auth_guard.dart';
+import 'package:stay_booking_frontend/service/core/http_client.dart';
+import 'package:stay_booking_frontend/service/notification/push_notification_service.dart';
 import 'package:stay_booking_frontend/view/admin_home_screen.dart';
 import 'package:stay_booking_frontend/view/forgot_password_screen.dart';
 import 'package:stay_booking_frontend/view/home_screen.dart';
 import 'package:stay_booking_frontend/view/login_screen.dart';
+import 'package:stay_booking_frontend/view/notification/notification_screen.dart';
 import 'package:stay_booking_frontend/view/register_screen.dart';
 import 'package:stay_booking_frontend/view/reset_password_screen.dart';
 import 'package:stay_booking_frontend/view/splashscreen.dart';
@@ -13,6 +19,16 @@ import 'package:stay_booking_frontend/view/vendor_home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final authController = await Get.putAsync<AuthController>(
+    () => AuthController().init(),
+    permanent: true,
+  );
+  HttpClient.initialize(authController);
+  Get.put(NotificationController(), permanent: true);
+  await Get.putAsync<PushNotificationService>(
+    () => PushNotificationService().init(),
+    permanent: true,
+  );
   runApp(const MyApp());
 }
 
@@ -33,10 +49,24 @@ class MyApp extends StatelessWidget {
         GetPage(name: AppRoutes.splash, page: () => const SplashScreen()),
         GetPage(name: AppRoutes.login, page: () => const LoginScreen()),
         GetPage(name: AppRoutes.home, page: () => const HomeScreen()),
-        GetPage(name: AppRoutes.adminHome, page: () => const AdminHomeScreen()),
+        GetPage(
+          name: AppRoutes.notifications,
+          page: () => const NotificationScreen(),
+          middlewares: [AuthGuard()],
+        ),
+        GetPage(
+          name: AppRoutes.adminHome,
+          page: () => const AdminHomeScreen(),
+          middlewares: [
+            AuthGuard(allowedRoles: {'ADMIN'}),
+          ],
+        ),
         GetPage(
           name: AppRoutes.vendorHome,
           page: () => const VendorHomeScreen(),
+          middlewares: [
+            AuthGuard(allowedRoles: {'VENDOR', 'ADMIN'}),
+          ],
         ),
         GetPage(
           name: AppRoutes.vendorAddRoom,
@@ -55,6 +85,9 @@ class MyApp extends StatelessWidget {
               hotelName: hotelName,
             );
           },
+          middlewares: [
+            AuthGuard(allowedRoles: {'VENDOR', 'ADMIN'}),
+          ],
         ),
         GetPage(name: AppRoutes.register, page: () => RegisterScreen()),
         GetPage(

@@ -5,6 +5,7 @@ class AppRoutes {
   static const String adminHome = '/admin-home';
   static const String vendorHome = '/vendor-home';
   static const String vendorAddRoom = '/vendor-add-room';
+  static const String notifications = '/notifications';
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
   static const String resetPassword = '/reset-password';

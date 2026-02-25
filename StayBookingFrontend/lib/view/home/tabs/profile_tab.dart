@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:stay_booking_frontend/controller/auth_controller.dart';
 import 'package:stay_booking_frontend/controller/profile_controller.dart';
-import 'package:stay_booking_frontend/routes/app_routes.dart';
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({required this.user, super.key});
@@ -10,6 +10,7 @@ class ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authController = Get.find<AuthController>();
     final emailKey = (user['email'] as String?)?.trim() ?? 'guest';
     final roleKey = (user['role'] as String?)?.trim().toLowerCase() ?? 'user';
     final idKey = user['id']?.toString().trim();
@@ -89,7 +90,10 @@ class ProfileTab extends StatelessWidget {
                 style: TextButton.styleFrom(
                   foregroundColor: const Color(0xFFC62828),
                 ),
-                onPressed: () => Get.offAllNamed(AppRoutes.login),
+                onPressed: () => authController.logout(
+                  redirectToLogin: true,
+                  showMessage: false,
+                ),
                 icon: const Icon(Icons.logout_rounded),
                 label: const Text(
                   'Logout',
