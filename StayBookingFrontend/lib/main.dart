@@ -41,19 +41,14 @@ class MyApp extends StatelessWidget {
         GetPage(
           name: AppRoutes.vendorAddRoom,
           page: () {
-            final rawArgs = Get.arguments;
-            final args = rawArgs is Map
-                ? Map<String, dynamic>.from(rawArgs)
+            final args = Get.arguments as Map<String, dynamic>? ?? {};
+            final user = args['user'] is Map<String, dynamic>
+                ? args['user'] as Map<String, dynamic>
                 : <String, dynamic>{};
-            final rawUser = args['user'];
-            final user = rawUser is Map
-                ? Map<String, dynamic>.from(rawUser)
-                : <String, dynamic>{};
-            final rawHotelId = args['hotelId'];
-            final hotelId = rawHotelId is int
-                ? rawHotelId
-                : int.tryParse(rawHotelId?.toString() ?? '') ?? 0;
-            final hotelName = (args['hotelName'] as String?)?.trim() ?? '';
+            final hotelId = args['hotelId'] is int
+                ? args['hotelId'] as int
+                : int.tryParse(args['hotelId']?.toString() ?? '') ?? 0;
+            final hotelName = args['hotelName']?.toString().trim() ?? '';
             return AddRoomScreen(
               user: user,
               hotelId: hotelId,

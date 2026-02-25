@@ -78,7 +78,8 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (_controller.errorMessage.value.isNotEmpty && _controller.items.isEmpty) {
+          if (_controller.errorMessage.value.isNotEmpty &&
+              _controller.items.isEmpty) {
             return _ErrorState(
               message: _controller.errorMessage.value,
               onRetry: _controller.loadFirstPage,
@@ -89,7 +90,9 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
             padding: _contentPadding(context),
             children: [
               if (_controller.isEmpty)
-                const _EmptyState(message: 'No users found for selected filters.')
+                const _EmptyState(
+                  message: 'No users found for selected filters.',
+                )
               else
                 ..._controller.items.map(_buildUserCard),
               const SizedBox(height: 12),
@@ -159,7 +162,8 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
                             ),
                           )
                           .toList(growable: false),
-                      onChanged: (value) => setModalState(() => roleValue = value),
+                      onChanged: (value) =>
+                          setModalState(() => roleValue = value),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String?>(
@@ -173,14 +177,17 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
                             ),
                           )
                           .toList(growable: false),
-                      onChanged: (value) => setModalState(() => statusValue = value),
+                      onChanged: (value) =>
+                          setModalState(() => statusValue = value),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: sortValue,
                       decoration: const InputDecoration(labelText: 'Sort By'),
                       items: _sortOptions
-                          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                          .map(
+                            (e) => DropdownMenuItem(value: e, child: Text(e)),
+                          )
                           .toList(growable: false),
                       onChanged: (value) =>
                           setModalState(() => sortValue = value ?? 'updatedat'),
@@ -190,8 +197,14 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
                       initialValue: directionValue,
                       decoration: const InputDecoration(labelText: 'Direction'),
                       items: const [
-                        DropdownMenuItem(value: 'asc', child: Text('Ascending')),
-                        DropdownMenuItem(value: 'desc', child: Text('Descending')),
+                        DropdownMenuItem(
+                          value: 'asc',
+                          child: Text('Ascending'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'desc',
+                          child: Text('Descending'),
+                        ),
                       ],
                       onChanged: (value) =>
                           setModalState(() => directionValue = value ?? 'desc'),
@@ -223,7 +236,8 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
                               await _controller.setRoleFilter(roleValue);
                               await _controller.setStatusFilter(statusValue);
                               await _controller.setSort(sortValue);
-                              if (_controller.direction.value != directionValue) {
+                              if (_controller.direction.value !=
+                                  directionValue) {
                                 await _controller.toggleDirection();
                               }
                             },
@@ -246,7 +260,9 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
     return Card(
       child: ListTile(
         title: Text(user.fullName.isEmpty ? user.email : user.fullName),
-        subtitle: Text('Email: ${user.email}\nRole: ${user.role} | Status: ${user.status}'),
+        subtitle: Text(
+          'Email: ${user.email}\nRole: ${user.role} | Status: ${user.status}',
+        ),
         isThreeLine: true,
         trailing: PopupMenuButton<String>(
           onSelected: (value) async {
@@ -282,7 +298,10 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Update Access', style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    'Update Access',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: roleValue,
@@ -335,8 +354,8 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
     final horizontal = width >= 1200
         ? 32.0
         : width >= 900
-            ? 24.0
-            : 16.0;
+        ? 24.0
+        : 16.0;
     return EdgeInsets.fromLTRB(horizontal, 16, horizontal, 24);
   }
 }
@@ -355,11 +374,15 @@ class _PaginationBar extends StatelessWidget {
         ),
         const Spacer(),
         IconButton(
-          onPressed: controller.isFirstPage.value ? null : controller.goToPreviousPage,
+          onPressed: controller.isFirstPage.value
+              ? null
+              : controller.goToPreviousPage,
           icon: const Icon(Icons.chevron_left),
         ),
         IconButton(
-          onPressed: controller.isLastPage.value ? null : controller.goToNextPage,
+          onPressed: controller.isLastPage.value
+              ? null
+              : controller.goToNextPage,
           icon: const Icon(Icons.chevron_right),
         ),
       ],

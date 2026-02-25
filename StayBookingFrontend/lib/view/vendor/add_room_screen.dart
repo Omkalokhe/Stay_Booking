@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:stay_booking_frontend/controller/vendor_room_controller.dart';
 import 'package:stay_booking_frontend/routes/app_routes.dart';
-import 'package:get/get.dart';
 
 class AddRoomScreen extends StatefulWidget {
   const AddRoomScreen({
@@ -56,10 +56,7 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
         permanent: true,
       );
     }
-    _controller.startCreate(
-      presetHotelId: widget.hotelId,
-      lockHotelId: true,
-    );
+    _controller.startCreate(presetHotelId: widget.hotelId, lockHotelId: true);
     final presetRoomType = _controller.roomTypeController.text.trim();
     if (_roomTypeOptions.contains(presetRoomType)) {
       _selectedRoomType = presetRoomType;
@@ -72,8 +69,13 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
         ? 'Selected Hotel'
         : widget.hotelName.trim();
     return Scaffold(
+      backgroundColor: const Color(0xFF3F1D89),
       appBar: AppBar(
-        title: Text('Add Room - $safeHotelName'),
+        backgroundColor: const Color(0xFF3F1D89),
+        title: Text(
+          'Add Room - $safeHotelName',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -93,16 +95,14 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                         children: [
                           Text(
                             'Create Room',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             'Create a room for $safeHotelName.',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Colors.black54,
-                                ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: Colors.black54),
                           ),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
@@ -191,7 +191,9 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                               children: [
                                 TextButton.icon(
                                   onPressed: _controller.pickPhotos,
-                                  icon: const Icon(Icons.photo_library_outlined),
+                                  icon: const Icon(
+                                    Icons.photo_library_outlined,
+                                  ),
                                   label: const Text('Select Photos (Multiple)'),
                                 ),
                                 if (_controller.selectedPhotos.isNotEmpty)
@@ -202,8 +204,8 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                                         .map(
                                           (file) => InputChip(
                                             label: Text(file.name),
-                                            onDeleted: () =>
-                                                _controller.removePickedPhoto(file),
+                                            onDeleted: () => _controller
+                                                .removePickedPhoto(file),
                                           ),
                                         )
                                         .toList(),

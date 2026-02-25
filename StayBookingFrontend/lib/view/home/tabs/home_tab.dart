@@ -17,6 +17,7 @@ class HomeTab extends StatelessWidget {
         : Get.put(CustomerBookingController(), tag: tag);
 
     return Scaffold(
+      backgroundColor: Color(0xFF3F1D89),
       appBar: AppBar(
         backgroundColor: Color(0xFF3F1D89),
         toolbarHeight: 60,
@@ -373,12 +374,15 @@ class HomeTab extends StatelessWidget {
         children: [
           OutlinedButton(
             onPressed: c.page.value > 0 ? c.goToPreviousPage : null,
-            child: const Text('Previous'),
+            child: const Text(
+              'Previous',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
           Text(
             'Page ${c.page.value + 1} / ${c.totalPages.value}',
             style: const TextStyle(
-              color: Colors.black87,
+              color: Colors.white,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -386,11 +390,14 @@ class HomeTab extends StatelessWidget {
             onPressed: c.page.value < (c.totalPages.value - 1)
                 ? c.goToNextPage
                 : null,
-            child: const Text('Next'),
+            child: const Text('Next', style: TextStyle(color: Colors.white)),
           ),
           Text(
             'Total: ${c.totalElements.value}',
-            style: const TextStyle(color: Colors.black54),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

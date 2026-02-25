@@ -36,6 +36,7 @@ class ProfileTab extends StatelessWidget {
       final status = (currentUser['status'] as String?)?.trim() ?? '-';
 
       return Scaffold(
+        backgroundColor: const Color(0xFF3E1E86),
         appBar: AppBar(
           backgroundColor: Color(0xFF3F1D89),
           toolbarHeight: 60,
@@ -119,166 +120,213 @@ class ProfileTab extends StatelessWidget {
                     constraints: BoxConstraints(maxWidth: contentWidth),
                     child: Form(
                       key: profileController.formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 16),
-                          if (profileController.isLoading.value)
-                            const Padding(
-                              padding: EdgeInsets.only(bottom: 12),
-                              child: LinearProgressIndicator(),
-                            ),
-                          if (profileController.errorMessage.value.isNotEmpty)
-                            Container(
-                              width: double.infinity,
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFDECEC),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.error_outline,
-                                    color: Color(0xFFC62828),
+                      child: Obx(
+                        () => KeyedSubtree(
+                          key: ValueKey(profileController.isEditing.value),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 16),
+                              if (profileController.isLoading.value)
+                                const Padding(
+                                  padding: EdgeInsets.only(bottom: 12),
+                                  child: LinearProgressIndicator(),
+                                ),
+                              if (profileController
+                                  .errorMessage
+                                  .value
+                                  .isNotEmpty)
+                                Container(
+                                  width: double.infinity,
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFDECEC),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      profileController.errorMessage.value,
-                                      style: const TextStyle(
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.error_outline,
                                         color: Color(0xFFC62828),
                                       ),
-                                    ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          profileController.errorMessage.value,
+                                          style: const TextStyle(
+                                            color: Color(0xFFC62828),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (profileController.isEditing.value)
+                                _buildEditForm(profileController)
+                              else
+                                _buildReadOnlyDetails(
+                                  email: email,
+                                  phone: phone,
+                                  gender: gender,
+                                  role: role,
+                                  status: status,
+                                  address: address,
+                                  city: city,
+                                  state: state,
+                                  country: country,
+                                  pincode: pincode,
+                                ),
+                              const SizedBox(height: 18),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: profileController.isEditing.value
+                                        ? OutlinedButton.icon(
+                                            onPressed:
+                                                profileController
+                                                    .isUpdating
+                                                    .value
+                                                ? null
+                                                : profileController
+                                                      .cancelEditing,
+                                            icon: const Icon(
+                                              Icons.close_rounded,
+                                            ),
+                                            label: const Text('Cancel'),
+                                          )
+                                        : OutlinedButton.icon(
+                                            onPressed:
+                                                profileController.startEditing,
+                                            icon: const Icon(
+                                              Icons.edit_outlined,
+                                              color: Colors.white,
+                                            ),
+                                            label: const Text(
+                                              'Update Profile',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: profileController.isEditing.value
+                                        ? ElevatedButton.icon(
+                                            onPressed:
+                                                profileController
+                                                    .isUpdating
+                                                    .value
+                                                ? null
+                                                : profileController
+                                                      .submitUpdate,
+                                            icon:
+                                                profileController
+                                                    .isUpdating
+                                                    .value
+                                                ? const SizedBox(
+                                                    height: 16,
+                                                    width: 16,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                  )
+                                                : const Icon(
+                                                    Icons.check_rounded,
+                                                  ),
+                                            label: Text(
+                                              profileController.isUpdating.value
+                                                  ? 'Saving...'
+                                                  : 'Save',
+                                            ),
+                                          )
+                                        : ElevatedButton.icon(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(
+                                                0xFFC62828,
+                                              ),
+                                              foregroundColor: Colors.white,
+                                            ),
+                                            onPressed:
+                                                profileController
+                                                    .isDeleting
+                                                    .value
+                                                ? null
+                                                : () => _showDeleteConfirmation(
+                                                    context,
+                                                    profileController,
+                                                  ),
+                                            icon:
+                                                profileController
+                                                    .isDeleting
+                                                    .value
+                                                ? const SizedBox(
+                                                    height: 16,
+                                                    width: 16,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                  )
+                                                : const Icon(
+                                                    Icons
+                                                        .delete_outline_rounded,
+                                                  ),
+                                            label: Text(
+                                              profileController.isDeleting.value
+                                                  ? 'Deleting...'
+                                                  : 'Delete Profile',
+                                            ),
+                                          ),
                                   ),
                                 ],
                               ),
-                            ),
-                          if (profileController.isEditing.value)
-                            _buildEditForm(profileController)
-                          else
-                            _buildReadOnlyDetails(
-                              email: email,
-                              phone: phone,
-                              gender: gender,
-                              role: role,
-                              status: status,
-                              address: address,
-                              city: city,
-                              state: state,
-                              country: country,
-                              pincode: pincode,
-                            ),
-                          const SizedBox(height: 18),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: profileController.isEditing.value
-                                    ? OutlinedButton.icon(
-                                        onPressed:
-                                            profileController.isUpdating.value
-                                            ? null
-                                            : profileController.cancelEditing,
-                                        icon: const Icon(Icons.close_rounded),
-                                        label: const Text('Cancel'),
-                                      )
-                                    : OutlinedButton.icon(
-                                        onPressed:
-                                            profileController.startEditing,
-                                        icon: const Icon(Icons.edit_outlined),
-                                        label: const Text('Update Profile'),
-                                      ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: profileController.isEditing.value
-                                    ? ElevatedButton.icon(
-                                        onPressed:
-                                            profileController.isUpdating.value
-                                            ? null
-                                            : profileController.submitUpdate,
-                                        icon: profileController.isUpdating.value
-                                            ? const SizedBox(
-                                                height: 16,
-                                                width: 16,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                              )
-                                            : const Icon(Icons.check_rounded),
-                                        label: Text(
-                                          profileController.isUpdating.value
-                                              ? 'Saving...'
-                                              : 'Save',
-                                        ),
-                                      )
-                                    : ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(
-                                            0xFFC62828,
-                                          ),
-                                          foregroundColor: Colors.white,
-                                        ),
-                                        onPressed:
-                                            profileController.isDeleting.value
-                                            ? null
-                                            : () => _showDeleteConfirmation(
-                                                context,
-                                                profileController,
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  if (!profileController.isEditing.value)
+                                    TextButton.icon(
+                                      onPressed:
+                                          profileController
+                                              .isSendingResetOtp
+                                              .value
+                                          ? null
+                                          : profileController
+                                                .requestPasswordResetOtp,
+                                      icon:
+                                          profileController
+                                              .isSendingResetOtp
+                                              .value
+                                          ? const SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
                                               ),
-                                        icon: profileController.isDeleting.value
-                                            ? const SizedBox(
-                                                height: 16,
-                                                width: 16,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                              )
-                                            : const Icon(
-                                                Icons.delete_outline_rounded,
-                                              ),
-                                        label: Text(
-                                          profileController.isDeleting.value
-                                              ? 'Deleting...'
-                                              : 'Delete Profile',
+                                            )
+                                          : const Icon(
+                                              Icons.lock_reset_rounded,
+                                              color: Colors.white,
+                                            ),
+                                      label: Text(
+                                        profileController
+                                                .isSendingResetOtp
+                                                .value
+                                            ? 'Sending...'
+                                            : 'Reset Password',
+                                        style: const TextStyle(
+                                          color: Colors.white,
                                         ),
                                       ),
+                                    ),
+                                ],
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              if (!profileController.isEditing.value)
-                                TextButton.icon(
-                                  onPressed:
-                                      profileController.isSendingResetOtp.value
-                                      ? null
-                                      : profileController
-                                            .requestPasswordResetOtp,
-                                  icon:
-                                      profileController.isSendingResetOtp.value
-                                      ? const SizedBox(
-                                          width: 16,
-                                          height: 16,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : const Icon(Icons.lock_reset_rounded),
-                                  label: Text(
-                                    profileController.isSendingResetOtp.value
-                                        ? 'Sending...'
-                                        : 'Reset Password',
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -377,24 +425,29 @@ class ProfileTab extends StatelessWidget {
                 decoration: _inputDecoration('Mobile', Icons.phone_outlined),
               ),
             ),
+
+            /// ✅ FIXED DROPDOWN
             _field(
               width: fieldWidth,
-              child: Obx(
-                () => DropdownButtonFormField<String>(
-                  initialValue: controller.selectedGender.value,
+              child: Obx(() {
+                return DropdownButtonFormField<String>(
+                  value: controller.selectedGender.value,
                   items: ProfileController.genders
                       .map(
                         (g) =>
                             DropdownMenuItem<String>(value: g, child: Text(g)),
                       )
-                      .toList(growable: false),
+                      .toList(),
                   onChanged: (value) {
-                    if (value != null) controller.selectedGender.value = value;
+                    if (value != null) {
+                      controller.selectedGender.value = value;
+                    }
                   },
                   decoration: _inputDecoration('Gender', Icons.wc_outlined),
-                ),
-              ),
+                );
+              }),
             ),
+
             _field(
               width: fieldWidth,
               child: TextFormField(

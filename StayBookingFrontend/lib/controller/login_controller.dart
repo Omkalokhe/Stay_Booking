@@ -6,7 +6,7 @@ import 'package:stay_booking_frontend/service/auth/login_service.dart';
 
 class LoginController extends GetxController {
   LoginController({LoginService? loginService})
-      : _loginService = loginService ?? LoginService();
+    : _loginService = loginService ?? LoginService();
 
   final LoginService _loginService;
   final email = ''.obs;

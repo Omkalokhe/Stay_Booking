@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:stay_booking_frontend/controller/booking/booking_controller.dart';
 import 'package:stay_booking_frontend/controller/customer_booking_controller.dart';
-
 import 'package:stay_booking_frontend/view/home/tabs/booking_tab.dart';
 import 'package:stay_booking_frontend/view/home/tabs/home_tab.dart';
 import 'package:stay_booking_frontend/view/home/tabs/profile_tab.dart';
@@ -68,10 +67,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _refreshCustomerRooms({required Duration maxAge}) async {
-    if (!Get.isRegistered<CustomerBookingController>(tag: _customerBookingTag)) {
+    if (!Get.isRegistered<CustomerBookingController>(
+      tag: _customerBookingTag,
+    )) {
       return;
     }
-    final controller = Get.find<CustomerBookingController>(tag: _customerBookingTag);
+    final controller = Get.find<CustomerBookingController>(
+      tag: _customerBookingTag,
+    );
     await controller.refreshIfStale(maxAge: maxAge);
   }
 
@@ -98,15 +101,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final user = _extractUserFromArgs();
 
     return Scaffold(
+      backgroundColor: Color(0xFF3F1D89),
       body: Container(
         width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF3F1D89), Color(0xFF24144D)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: const BoxDecoration(),
         child: SafeArea(
           child: IndexedStack(
             index: _selectedIndex,
@@ -118,26 +116,43 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: _onDestinationSelected,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: NavigationBar(
+              height: 70,
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: _onDestinationSelected,
+
+              backgroundColor: const Color(0xFFFAF9FF),
+              elevation: 8,
+
+              indicatorColor: const Color(0xFFD9CCFF),
+
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home_rounded),
+                  label: 'Home',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.calendar_month_outlined),
+                  selectedIcon: Icon(Icons.calendar_month_rounded),
+                  label: 'Booking',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.person_outline_rounded),
+                  selectedIcon: Icon(Icons.person_rounded),
+                  label: 'Profile',
+                ),
+              ],
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month_rounded),
-            label: 'Booking',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Profile',
-          ),
-        ],
+        ),
       ),
     );
   }

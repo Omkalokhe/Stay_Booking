@@ -166,37 +166,49 @@ class VendorHotelTab extends StatelessWidget {
   }) {
     final isDeleting = controller.deletingHotelIds.contains(hotel.id);
 
-    return Card(
-      elevation: 1.5,
-      color: const Color(0xFFF9F8FD),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFF7F5FF), Color(0xFFFFFFFF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            /// Header row
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFECE6FF),
-                    borderRadius: BorderRadius.circular(10),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF7C5CFF), Color(0xFF5A31D6)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.hotel_rounded,
-                    color: Color(0xFF5A31D6),
-                  ),
+                  child: const Icon(Icons.hotel_rounded, color: Colors.white),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     hotel.name,
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 17,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -204,36 +216,41 @@ class VendorHotelTab extends StatelessWidget {
                 _ratingChip(hotel.rating),
               ],
             ),
+
             const SizedBox(height: 10),
+
             Text(
               hotel.description.isEmpty
-                  ? 'No description added.'
+                  ? 'No description available'
                   : hotel.description,
-              maxLines: 3,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.black87),
+              style: const TextStyle(color: Colors.black54),
             ),
+
             const SizedBox(height: 10),
+
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Icon(
                   Icons.location_on_outlined,
                   size: 18,
-                  color: Colors.black54,
+                  color: Colors.grey,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    '${hotel.address}, ${hotel.city}, ${hotel.state}, ${hotel.country} - ${hotel.pincode}',
-                    maxLines: 2,
+                    '${hotel.city}, ${hotel.state}',
+                    style: const TextStyle(color: Colors.grey),
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.black54),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+
+            const SizedBox(height: 14),
+
+            /// Actions
             Row(
               children: [
                 Expanded(
@@ -250,8 +267,7 @@ class VendorHotelTab extends StatelessWidget {
                 Expanded(
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFC62828),
-                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.red.shade600,
                     ),
                     onPressed: isDeleting
                         ? null
@@ -266,20 +282,26 @@ class VendorHotelTab extends StatelessWidget {
                           },
                     icon: isDeleting
                         ? const SizedBox(
-                            width: 14,
-                            height: 14,
+                            width: 16,
+                            height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.delete_outline_rounded, size: 18),
+                        : const Icon(Icons.delete_outline),
                     label: Text(isDeleting ? 'Deleting' : 'Delete'),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+
+            const SizedBox(height: 10),
+
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton.icon(
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF5A31D6),
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: () {
                   Get.toNamed(
                     AppRoutes.vendorAddRoom,
@@ -290,7 +312,7 @@ class VendorHotelTab extends StatelessWidget {
                     },
                   );
                 },
-                icon: const Icon(Icons.add_box_rounded, size: 18),
+                icon: const Icon(Icons.add_box_rounded),
                 label: const Text('Add Room For This Hotel'),
               ),
             ),

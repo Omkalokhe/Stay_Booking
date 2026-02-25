@@ -13,87 +13,38 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  static const String _title = 'Splash Screen';
   late final AnimationController _controller;
-  late final List<String> _chars;
-  late final List<Interval> _charIntervals;
-  Timer? _fallbackTimer;
+  late final Animation<double> _zoomAnimation;
+  late final Animation<double> _iconScale;
+
+  Timer? _timer;
   bool _hasNavigated = false;
 
   @override
   void initState() {
     super.initState();
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 5),
-    )
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _navigateToLogin();
-        }
-      })
-      ..forward();
+    )..repeat(reverse: true);
 
-    // Fallback so splash cannot get stuck if animation callbacks are skipped.
-    _fallbackTimer = Timer(const Duration(seconds: 6), _navigateToLogin);
+    /// Background zoom
+    _zoomAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.2,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
-    _chars = _title.split('');
+    /// Icon pulse
+    _iconScale = Tween<double>(
+      begin: 0.8,
+      end: 1.2,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
-    final step = 0.8 / _chars.length;
-    _charIntervals = List<Interval>.generate(_chars.length, (index) {
-      final start = step * index;
-      final end = (start + 0.25).clamp(0.0, 1.0);
-      return Interval(start, end, curve: Curves.easeOutCubic);
-    });
+    _timer = Timer(const Duration(seconds: 5), _navigate);
   }
 
-  Widget _buildAnimatedChar(String char, Interval interval, double fontSize) {
-    final curved = CurvedAnimation(
-      parent: _controller,
-      curve: interval,
-    );
-
-    return FadeTransition(
-      opacity: curved,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 1.2),
-          end: Offset.zero,
-        ).animate(curved),
-        child: Text(
-          char,
-          style: _textStyle(fontSize),
-        ),
-      ),
-    );
-  }
-
-  TextStyle _textStyle(double fontSize) {
-    return TextStyle(
-      color: Colors.white,
-      fontSize: fontSize,
-      fontWeight: FontWeight.bold,
-      shadows: const [
-        Shadow(
-          color: Colors.white54,
-          blurRadius: 8,
-        ),
-        Shadow(
-          color: Colors.white30,
-          blurRadius: 14,
-        ),
-      ],
-    );
-  }
-
-  double _responsiveFontSize(BuildContext context) {
-    final shortestSide = MediaQuery.of(context).size.shortestSide;
-    if (shortestSide < 360) return 32;
-    if (shortestSide < 600) return 40;
-    return 52;
-  }
-
-  void _navigateToLogin() {
+  void _navigate() {
     if (!mounted || _hasNavigated) return;
     _hasNavigated = true;
     Get.offNamed(AppRoutes.login);
@@ -101,34 +52,106 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
-    _fallbackTimer?.cancel();
+    _timer?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
+  Widget _floatingIcon(IconData icon, Alignment alignment, double delay) {
+    return TweenAnimationBuilder(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: Duration(milliseconds: (2000 + delay * 500).toInt()),
+      curve: Curves.easeInOut,
+      builder: (context, value, child) {
+        return Align(
+          alignment: alignment,
+          child: Opacity(
+            opacity: value,
+            child: Transform.translate(
+              offset: Offset(0, -20 * value),
+              child: Icon(icon, color: Colors.white70, size: 32),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final fontSize = _responsiveFontSize(context);
-
     return Scaffold(
-      body: Container(
-        color: Colors.deepPurple,
-        child: Center(
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List<Widget>.generate(
-                _chars.length,
-                (index) => _buildAnimatedChar(
-                  _chars[index],
-                  _charIntervals[index],
-                  fontSize,
+      body: Stack(
+        children: [
+          /// Background image with zoom animation
+          AnimatedBuilder(
+            animation: _zoomAnimation,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _zoomAnimation.value,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/hotel.png'),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
+              );
+            },
+          ),
+
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.black54, Color(0xAA3F1D89)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
             ),
           ),
-        ),
+
+          _floatingIcon(Icons.hotel, Alignment.topLeft, 0),
+          _floatingIcon(Icons.flight_takeoff, Alignment.topRight, 1),
+          _floatingIcon(Icons.location_on, Alignment.bottomLeft, 2),
+          _floatingIcon(Icons.luggage, Alignment.bottomRight, 3),
+
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedBuilder(
+                  animation: _iconScale,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: _iconScale.value,
+                      child: const Icon(
+                        Icons.hotel_class,
+                        color: Colors.white,
+                        size: 80,
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  "StayBook",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 44,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                    shadows: [Shadow(color: Colors.black45, blurRadius: 10)],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  "Find your perfect stay",
+                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

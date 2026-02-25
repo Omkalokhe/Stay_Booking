@@ -40,6 +40,7 @@ class _BookingTabState extends State<BookingTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF3E1E86),
       appBar: AppBar(
         backgroundColor: const Color(0xFF3E1E86),
         foregroundColor: Colors.white,
@@ -1062,19 +1063,23 @@ class _PaginationBar extends StatelessWidget {
       children: [
         Text(
           'Total: ${controller.totalElements.value} | Page ${controller.page.value + 1}/${controller.totalPages.value}',
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
         const Spacer(),
         IconButton(
           onPressed: controller.isFirstPage.value
               ? null
               : controller.goToPreviousPage,
-          icon: const Icon(Icons.chevron_left),
+          icon: const Icon(Icons.chevron_left, color: Colors.white),
         ),
         IconButton(
           onPressed: controller.isLastPage.value
               ? null
               : controller.goToNextPage,
-          icon: const Icon(Icons.chevron_right),
+          icon: const Icon(Icons.chevron_right, color: Colors.white),
         ),
       ],
     );

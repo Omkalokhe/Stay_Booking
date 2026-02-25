@@ -19,10 +19,12 @@ class HotelReviewScreen extends StatelessWidget {
         ? 'Hotel #$hotelId Reviews'
         : hotelName;
     return Scaffold(
+      backgroundColor: const Color(0xFF3F1D89),
       appBar: AppBar(
         backgroundColor: const Color(0xFF3F1D89),
         foregroundColor: Colors.white,
         title: Text(title),
+        centerTitle: true,
       ),
       body: SafeArea(
         child: ListView(

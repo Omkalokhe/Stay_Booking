@@ -67,8 +67,10 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
         : room.hotelName.trim();
 
     return Scaffold(
+      backgroundColor: const Color(0xFF3F1D89),
       appBar: AppBar(
         backgroundColor: const Color(0xFF3F1D89),
+        foregroundColor: Colors.white,
         title: Text(hotelName, style: const TextStyle(color: Colors.white)),
         centerTitle: true,
       ),
@@ -178,10 +180,7 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
       return Container(
         width: double.infinity,
         height: 240,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF4F2FA),
-          borderRadius: BorderRadius.circular(14),
-        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(14)),
         alignment: Alignment.center,
         child: const Column(
           mainAxisSize: MainAxisSize.min,
@@ -261,7 +260,11 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
         Expanded(
           child: Text(
             room.roomType,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         Container(

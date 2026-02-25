@@ -79,15 +79,10 @@ class _VendorHomeScreenState extends State<VendorHomeScreen>
     final user = _extractUser(rawArgs);
 
     return Scaffold(
+      backgroundColor: Color(0xFF3F1D89),
       body: Container(
         width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF3F1D89), Color.fromARGB(255, 37, 21, 76)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: const BoxDecoration(),
         child: SafeArea(
           child: IndexedStack(
             index: _selectedIndex,
@@ -100,31 +95,48 @@ class _VendorHomeScreenState extends State<VendorHomeScreen>
           ),
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: _onDestinationSelected,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.apartment_outlined),
-            selectedIcon: Icon(Icons.apartment_rounded),
-            label: 'Hotel',
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: NavigationBar(
+              height: 70,
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: _onDestinationSelected,
+
+              backgroundColor: Colors.white,
+              elevation: 8,
+
+              indicatorColor: const Color(0xFFEDE7FF),
+
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.apartment_outlined),
+                  selectedIcon: Icon(Icons.apartment_rounded),
+                  label: 'Hotel',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.bedroom_parent_outlined),
+                  selectedIcon: Icon(Icons.bedroom_parent_rounded),
+                  label: 'Room',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.receipt_long_outlined),
+                  selectedIcon: Icon(Icons.receipt_long_rounded),
+                  label: 'Booking',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.person_outline_rounded),
+                  selectedIcon: Icon(Icons.person_rounded),
+                  label: 'Profile',
+                ),
+              ],
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.bedroom_parent_outlined),
-            selectedIcon: Icon(Icons.bedroom_parent_rounded),
-            label: 'Room',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long_rounded),
-            label: 'Booking',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Profile',
-          ),
-        ],
+        ),
       ),
     );
   }
