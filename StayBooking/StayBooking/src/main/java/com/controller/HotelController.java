@@ -3,6 +3,8 @@ package com.controller;
 import com.dto.CreateHotelRequestDto;
 import com.dto.UpdateHotelRequestDto;
 import com.service.HotelService;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,8 +19,8 @@ public class HotelController {
         this.hotelService = hotelService;
     }
 
-    @PostMapping
-    public ResponseEntity<?> createHotel(@RequestBody CreateHotelRequestDto requestDto) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> createHotel(@ModelAttribute CreateHotelRequestDto requestDto) {
         return hotelService.createHotel(requestDto);
     }
 
@@ -40,8 +42,8 @@ public class HotelController {
         return hotelService.getHotels(page, size, sortBy, direction, city, country, search);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateHotel(@PathVariable int id, @RequestBody UpdateHotelRequestDto requestDto) {
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateHotel(@PathVariable int id, @ModelAttribute UpdateHotelRequestDto requestDto) {
         return hotelService.updateHotel(id, requestDto);
     }
 
@@ -51,5 +53,10 @@ public class HotelController {
             @RequestParam(value = "deletedBy", required = false) String deletedBy
     ) {
         return hotelService.deleteHotel(id, deletedBy);
+    }
+
+    @GetMapping("/photos/{filename:.+}")
+    public ResponseEntity<Resource> getHotelPhoto(@PathVariable String filename) {
+        return hotelService.getHotelPhoto(filename);
     }
 }

@@ -13,6 +13,7 @@ class HotelResponseDto {
     required this.updatedAt,
     required this.createdBy,
     required this.updatedBy,
+    this.photoUrls = const <String>[],
   });
 
   final int id;
@@ -28,6 +29,7 @@ class HotelResponseDto {
   final String updatedAt;
   final String createdBy;
   final String updatedBy;
+  final List<String> photoUrls;
 
   factory HotelResponseDto.fromJson(Map<String, dynamic> json) {
     return HotelResponseDto(
@@ -44,6 +46,7 @@ class HotelResponseDto {
       updatedAt: (json['updatedat'] as String?)?.trim() ?? '',
       createdBy: (json['createdby'] as String?)?.trim() ?? '',
       updatedBy: (json['updatedby'] as String?)?.trim() ?? '',
+      photoUrls: _toStringList(json['photoUrls'] ?? json['photos']),
     );
   }
 
@@ -55,5 +58,13 @@ class HotelResponseDto {
   static double _toDouble(dynamic value) {
     if (value is num) return value.toDouble();
     return double.tryParse(value?.toString() ?? '') ?? 0.0;
+  }
+
+  static List<String> _toStringList(dynamic value) {
+    if (value is! List) return const <String>[];
+    return value
+        .map((e) => e?.toString().trim() ?? '')
+        .where((e) => e.isNotEmpty)
+        .toList(growable: false);
   }
 }

@@ -2,6 +2,7 @@ package com.service;
 
 import com.dto.CreateHotelRequestDto;
 import com.dto.UpdateHotelRequestDto;
+import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 
 public interface HotelService {
@@ -14,4 +15,6 @@ public interface HotelService {
     ResponseEntity<?> updateHotel(int id, UpdateHotelRequestDto requestDto);
 
     ResponseEntity<?> deleteHotel(int id, String deletedBy);
+
+    ResponseEntity<Resource> getHotelPhoto(String filename);
 }

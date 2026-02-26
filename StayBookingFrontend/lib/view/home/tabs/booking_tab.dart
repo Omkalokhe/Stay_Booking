@@ -777,20 +777,9 @@ class _BookingTabState extends State<BookingTab> {
   }
 
   Widget _buildBookingCard(BookingResponseDto booking) {
-    final menuItems = <PopupMenuEntry<String>>[
-      const PopupMenuItem(value: 'view', child: Text('View')),
-      const PopupMenuItem(value: 'edit', child: Text('Edit')),
-      const PopupMenuItem(value: 'review', child: Text('Review Hotel')),
-      if (_canUpdateStatus)
-        const PopupMenuItem(value: 'status', child: Text('Update Status')),
-      if (_canPayBooking(booking))
-        const PopupMenuItem(value: 'pay', child: Text('Pay Now')),
-      const PopupMenuItem(value: 'cancel', child: Text('Cancel')),
-    ];
-
     return Card(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 8, 12),
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -820,26 +809,10 @@ class _BookingTabState extends State<BookingTab> {
                     ],
                   ),
                 ),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert),
-                  tooltip: 'More',
-                  onSelected: (value) async {
-                    if (value == 'view') await _openBookingDetails(booking);
-                    if (value == 'edit') await _openUpdateBookingSheet(booking);
-                    if (value == 'review') {
-                      await _openHotelReviewScreen(booking);
-                    }
-                    if (value == 'status' && _canUpdateStatus) {
-                      await _openStatusUpdateSheet(booking);
-                    }
-                    if (value == 'pay') {
-                      await _openPayBookingSheet(booking);
-                    }
-                    if (value == 'cancel') {
-                      await _controller.cancelBooking(booking);
-                    }
-                  },
-                  itemBuilder: (context) => menuItems,
+                _bookingActionButton(
+                  label: 'View',
+                  icon: Icons.visibility_outlined,
+                  onTap: () => _openBookingDetails(booking),
                 ),
               ],
             ),
@@ -882,6 +855,90 @@ class _BookingTabState extends State<BookingTab> {
                       booking.paymentStatus.trim().toUpperCase() == 'SUCCESS',
                 ),
               ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _bookingActionButton(
+                    label: 'Edit',
+                    icon: Icons.edit_outlined,
+                    onTap: () => _openUpdateBookingSheet(booking),
+                    expand: true,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _bookingActionButton(
+                    label: _canUpdateStatus
+                        ? 'Status'
+                        : _canPayBooking(booking)
+                        ? 'Pay'
+                        : 'Review',
+                    icon: _canUpdateStatus
+                        ? Icons.swap_horiz_outlined
+                        : _canPayBooking(booking)
+                        ? Icons.payments_outlined
+                        : Icons.rate_review_outlined,
+                    onTap: _canUpdateStatus
+                        ? () => _openStatusUpdateSheet(booking)
+                        : _canPayBooking(booking)
+                        ? () => _openPayBookingSheet(booking)
+                        : () => _openHotelReviewScreen(booking),
+                    expand: true,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _bookingActionButton(
+                    label: 'Cancel',
+                    icon: Icons.cancel_outlined,
+                    onTap: () => _controller.cancelBooking(booking),
+                    isDestructive: true,
+                    expand: true,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _bookingActionButton({
+    required String label,
+    required IconData icon,
+    required Future<void> Function() onTap,
+    bool isDestructive = false,
+    bool expand = false,
+  }) {
+    final fg = isDestructive ? const Color(0xFFC62828) : const Color(0xFF4A4458);
+    final bg = isDestructive ? const Color(0xFFFDECEC) : const Color(0xFFF4F2FA);
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: () async => onTap(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: bg == const Color(0xFFF4F2FA) ? const Color(0xFFE1DDEE) : const Color(0xFFF6D3D3)),
+        ),
+        child: Row(
+          mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+          mainAxisAlignment:
+              expand ? MainAxisAlignment.center : MainAxisAlignment.start,
+          children: [
+            Icon(icon, size: 16, color: fg),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: fg,
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
             ),
           ],
         ),

@@ -43,6 +43,11 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/password/**", "/api/users/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/hotels/**", "/api/rooms/**", "/api/reviews/hotel/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

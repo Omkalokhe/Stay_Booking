@@ -6,6 +6,7 @@ import 'package:stay_booking_frontend/controller/booking/booking_controller.dart
 import 'package:stay_booking_frontend/model/booking_response_dto.dart';
 import 'package:stay_booking_frontend/model/create_booking_request_dto.dart';
 import 'package:stay_booking_frontend/model/room_response_dto.dart';
+import 'package:stay_booking_frontend/routes/app_routes.dart';
 import 'package:stay_booking_frontend/service/booking/booking_service.dart';
 import 'package:stay_booking_frontend/service/room/room_service.dart';
 import 'package:stay_booking_frontend/view/review/widgets/hotel_reviews_section.dart';
@@ -583,6 +584,7 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
                                     _activeBookingForRoom = result;
                                   });
                                   Navigator.of(context).pop();
+                                  _redirectToBookingTab();
                                 }
                               },
                         child: const Text('Confirm Booking'),
@@ -629,5 +631,16 @@ class _RoomViewScreenState extends State<RoomViewScreen> {
     final m = value.month.toString().padLeft(2, '0');
     final d = value.day.toString().padLeft(2, '0');
     return '$y-$m-$d';
+  }
+
+  void _redirectToBookingTab() {
+    final currentUser = widget.user;
+    if (currentUser == null || currentUser.isEmpty) return;
+
+    final args = <String, dynamic>{
+      ...currentUser,
+      'initialTab': 1,
+    };
+    Get.offAllNamed(AppRoutes.home, arguments: args);
   }
 }

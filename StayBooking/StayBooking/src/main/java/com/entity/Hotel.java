@@ -35,6 +35,11 @@ public class Hotel {
     @Column(precision = 2, scale = 1)
     private BigDecimal rating;
 
+    @ElementCollection
+    @CollectionTable(name = "hotel_photos", joinColumns = @JoinColumn(name = "hotel_id"))
+    @Column(name = "photo_path", nullable = false, length = 500)
+    private List<String> photoPaths = new ArrayList<>();
+
     private String createdat;
     private String updatedat;
     private String createdby;

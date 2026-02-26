@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:stay_booking_frontend/controller/vendor_hotel_controller.dart';
+import 'package:stay_booking_frontend/routes/hotel_form_binding.dart';
+import 'package:stay_booking_frontend/view/vendor/hotel_create_page.dart';
+import 'package:stay_booking_frontend/view/vendor/hotel_edit_page.dart';
 import 'package:stay_booking_frontend/model/hotel_response_dto.dart';
 import 'package:stay_booking_frontend/routes/app_routes.dart';
+import 'package:stay_booking_frontend/service/core/api_endpoints.dart';
+import 'package:stay_booking_frontend/view/vendor/hotel_details_screen.dart';
 
 class VendorHotelTab extends StatelessWidget {
   const VendorHotelTab({required this.user, super.key});
@@ -36,8 +41,14 @@ class VendorHotelTab extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: FilledButton.icon(
                   onPressed: () async {
-                    controller.startCreate();
-                    await _showHotelDialog(context, controller);
+                    final created = await Get.to<bool>(
+                      () => const HotelCreatePage(),
+                      binding: HotelFormBinding(),
+                      arguments: {'user': user},
+                    );
+                    if (created == true) {
+                      await controller.fetchHotels(resetPage: true);
+                    }
                   },
                   icon: const Icon(Icons.add_business_rounded),
                   label: const Text('Add Hotel'),
@@ -166,28 +177,36 @@ class VendorHotelTab extends StatelessWidget {
   }) {
     final isDeleting = controller.deletingHotelIds.contains(hotel.id);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFF7F5FF), Color(0xFFFFFFFF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: () {
+        Get.to(() => HotelDetailsScreen(hotel: hotel));
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: const LinearGradient(
+            colors: [Color(0xFFF7F5FF), Color(0xFFFFFFFF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _hotelImage(hotel),
+              const SizedBox(height: 12),
+
             /// Header row
             Row(
               children: [
@@ -256,8 +275,17 @@ class VendorHotelTab extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () async {
-                      controller.startEdit(hotel);
-                      await _showHotelDialog(context, controller);
+                      final updated = await Get.to<bool>(
+                        () => const HotelEditPage(),
+                        binding: HotelFormBinding(),
+                        arguments: {
+                          'hotelId': hotel.id,
+                          'user': user,
+                        },
+                      );
+                      if (updated == true) {
+                        await controller.fetchHotels();
+                      }
                     },
                     icon: const Icon(Icons.edit_outlined, size: 18),
                     label: const Text('Edit'),
@@ -316,10 +344,75 @@ class VendorHotelTab extends StatelessWidget {
                 label: const Text('Add Room For This Hotel'),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _hotelImage(HotelResponseDto hotel) {
+    final imageUrl = _primaryPhotoUrl(hotel);
+    if (imageUrl == null) {
+      return Container(
+        height: 150,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          gradient: const LinearGradient(
+            colors: [Color(0xFFE8E1FF), Color(0xFFF5F2FF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.image_outlined, size: 30, color: Color(0xFF6B5F91)),
+            SizedBox(height: 6),
+            Text(
+              'No hotel image',
+              style: TextStyle(
+                color: Color(0xFF6B5F91),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: SizedBox(
+        height: 150,
+        width: double.infinity,
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            color: const Color(0xFFF5F2FF),
+            child: const Center(
+              child: Icon(Icons.broken_image_outlined, color: Color(0xFF6B5F91)),
+            ),
+          ),
+          loadingBuilder: (context, child, progress) {
+            if (progress == null) return child;
+            return Container(
+              color: const Color(0xFFF5F2FF),
+              child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  String? _primaryPhotoUrl(HotelResponseDto hotel) {
+    if (hotel.photoUrls.isEmpty) return null;
+    final first = hotel.photoUrls.first.trim();
+    if (first.isEmpty) return null;
+    return ApiEndpoints.resolveUrl(first);
   }
 
   Future<void> _openFilterSheet(
@@ -576,169 +669,6 @@ class VendorHotelTab extends StatelessWidget {
     );
   }
 
-  Future<void> _showHotelDialog(
-    BuildContext context,
-    VendorHotelController controller,
-  ) async {
-    final isEdit = controller.editingHotelId.value != null;
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(isEdit ? 'Update Hotel' : 'Create Hotel'),
-          content: SizedBox(
-            width: MediaQuery.of(context).size.width > 900 ? 760 : 520,
-            child: Form(
-              key: controller.formKey,
-              child: SingleChildScrollView(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isWide = constraints.maxWidth >= 640;
-                    final width = isWide
-                        ? (constraints.maxWidth - 12) / 2
-                        : constraints.maxWidth;
-                    return Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        _formField(
-                          width: width,
-                          child: TextFormField(
-                            controller: controller.nameController,
-                            validator: (v) =>
-                                controller.requiredField(v, 'Hotel name'),
-                            decoration: _inputDecoration(
-                              'Hotel Name',
-                              Icons.hotel_rounded,
-                            ),
-                          ),
-                        ),
-                        // _formField(
-                        //   width: width,
-                        //   child: TextFormField(
-                        //     readOnly: true,
-                        //     controller: controller.ratingController,
-                        //     validator: controller.validateRating,
-                        //     keyboardType: const TextInputType.numberWithOptions(
-                        //       decimal: true,
-                        //     ),
-                        //     decoration: _inputDecoration(
-                        //       'Rating (0-5)',
-                        //       Icons.star_outline_rounded,
-                        //     ),
-                        //   ),
-                        // ),
-                        _formField(
-                          width: constraints.maxWidth,
-                          child: TextFormField(
-                            controller: controller.descriptionController,
-                            validator: (v) =>
-                                controller.requiredField(v, 'Description'),
-                            maxLines: 3,
-                            decoration: _inputDecoration(
-                              'Description',
-                              Icons.notes_rounded,
-                            ),
-                          ),
-                        ),
-                        _formField(
-                          width: constraints.maxWidth,
-                          child: TextFormField(
-                            controller: controller.addressController,
-                            validator: (v) =>
-                                controller.requiredField(v, 'Address'),
-                            decoration: _inputDecoration(
-                              'Address',
-                              Icons.location_on_outlined,
-                            ),
-                          ),
-                        ),
-                        _formField(
-                          width: width,
-                          child: TextFormField(
-                            controller: controller.cityController,
-                            validator: (v) =>
-                                controller.requiredField(v, 'City'),
-                            decoration: _inputDecoration(
-                              'City',
-                              Icons.location_city_outlined,
-                            ),
-                          ),
-                        ),
-                        _formField(
-                          width: width,
-                          child: TextFormField(
-                            controller: controller.stateController,
-                            validator: (v) =>
-                                controller.requiredField(v, 'State'),
-                            decoration: _inputDecoration(
-                              'State',
-                              Icons.map_outlined,
-                            ),
-                          ),
-                        ),
-                        _formField(
-                          width: width,
-                          child: TextFormField(
-                            controller: controller.countryController,
-                            validator: (v) =>
-                                controller.requiredField(v, 'Country'),
-                            decoration: _inputDecoration(
-                              'Country',
-                              Icons.public_outlined,
-                            ),
-                          ),
-                        ),
-                        _formField(
-                          width: width,
-                          child: TextFormField(
-                            controller: controller.pincodeController,
-                            validator: (v) =>
-                                controller.requiredField(v, 'Pincode'),
-                            keyboardType: TextInputType.number,
-                            decoration: _inputDecoration(
-                              'Pincode',
-                              Icons.pin_outlined,
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            Obx(
-              () => FilledButton(
-                onPressed: controller.isSubmitting.value
-                    ? null
-                    : () async {
-                        final ok = await controller.submitForm();
-                        if (ok && context.mounted) {
-                          Navigator.of(context).pop();
-                        }
-                      },
-                child: controller.isSubmitting.value
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(isEdit ? 'Update' : 'Create'),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Future<bool?> _confirmDelete(BuildContext context, String name) {
     return showDialog<bool>(
       context: context,
@@ -762,10 +692,6 @@ class VendorHotelTab extends StatelessWidget {
         );
       },
     );
-  }
-
-  Widget _formField({required double width, required Widget child}) {
-    return SizedBox(width: width, child: child);
   }
 
   InputDecoration _inputDecoration(String label, IconData icon) {
@@ -793,3 +719,4 @@ class VendorHotelTab extends StatelessWidget {
     );
   }
 }
+

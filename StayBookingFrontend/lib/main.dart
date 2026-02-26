@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:stay_booking_frontend/controller/auth_controller.dart';
 import 'package:stay_booking_frontend/controller/notification_controller.dart';
+import 'package:stay_booking_frontend/routes/hotel_form_routes.dart';
 import 'package:stay_booking_frontend/routes/app_routes.dart';
 import 'package:stay_booking_frontend/routes/auth_guard.dart';
 import 'package:stay_booking_frontend/service/core/http_client.dart';
@@ -103,7 +104,9 @@ class MyApp extends StatelessWidget {
           name: AppRoutes.forgotPasswordLegacy,
           page: () => ForgotPasswordScreen(),
         ),
+        ...HotelFormRoutes.pages(),
       ],
     );
   }
 }
+

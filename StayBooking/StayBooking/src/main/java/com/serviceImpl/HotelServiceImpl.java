@@ -6,27 +6,37 @@ import com.dto.PageResponseDto;
 import com.dto.UpdateHotelRequestDto;
 import com.entity.Hotel;
 import com.repository.HotelRepository;
+import com.service.HotelPhotoStorageService;
 import com.service.HotelService;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
 public class HotelServiceImpl implements HotelService {
 
     private final HotelRepository hotelRepository;
+    private final HotelPhotoStorageService hotelPhotoStorageService;
 
-    public HotelServiceImpl(HotelRepository hotelRepository) {
+    public HotelServiceImpl(HotelRepository hotelRepository, HotelPhotoStorageService hotelPhotoStorageService) {
         this.hotelRepository = hotelRepository;
+        this.hotelPhotoStorageService = hotelPhotoStorageService;
     }
 
     @Override
+    @Transactional
     public ResponseEntity<?> createHotel(CreateHotelRequestDto requestDto) {
         if (requestDto == null) {
             return ResponseEntity.badRequest().body("Request body is required");
@@ -50,8 +60,23 @@ public class HotelServiceImpl implements HotelService {
         hotel.setCreatedby(isBlank(requestDto.getCreatedby()) ? "SYSTEM" : requestDto.getCreatedby().trim());
         hotel.setUpdatedby(hotel.getCreatedby());
 
-        Hotel saved = hotelRepository.save(hotel);
-        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(saved));
+        List<String> savedPhotos;
+        try {
+            savedPhotos = hotelPhotoStorageService.saveHotelPhotos(requestDto.getPhotos());
+            hotel.setPhotoPaths(new ArrayList<>(savedPhotos));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest().body(exception.getMessage());
+        } catch (IllegalStateException exception) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save hotel photos");
+        }
+
+        try {
+            Hotel saved = hotelRepository.save(hotel);
+            return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(saved));
+        } catch (RuntimeException exception) {
+            hotelPhotoStorageService.deleteHotelPhotos(savedPhotos);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to create hotel");
+        }
     }
 
     @Override
@@ -94,6 +119,7 @@ public class HotelServiceImpl implements HotelService {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<?> updateHotel(int id, UpdateHotelRequestDto requestDto) {
         if (requestDto == null) {
             return ResponseEntity.badRequest().body("Request body is required");
@@ -138,11 +164,44 @@ public class HotelServiceImpl implements HotelService {
             hotel.setUpdatedby("SYSTEM");
         }
 
-        Hotel updated = hotelRepository.save(hotel);
-        return ResponseEntity.ok(toResponse(updated));
+        List<String> oldPhotos = new ArrayList<>(hotel.getPhotoPaths());
+        List<MultipartFile> incomingPhotos = requestDto.getPhotos();
+        boolean hasIncomingPhotos = incomingPhotos != null && incomingPhotos.stream().anyMatch(file -> file != null && !file.isEmpty());
+        boolean replacePhotos = Boolean.TRUE.equals(requestDto.getReplacePhotos());
+        List<String> newlySavedPhotos = new ArrayList<>();
+
+        try {
+            if (replacePhotos) {
+                newlySavedPhotos = hasIncomingPhotos
+                        ? hotelPhotoStorageService.saveHotelPhotos(incomingPhotos)
+                        : List.of();
+                hotel.setPhotoPaths(new ArrayList<>(newlySavedPhotos));
+            } else if (hasIncomingPhotos) {
+                newlySavedPhotos = hotelPhotoStorageService.saveHotelPhotos(incomingPhotos);
+                List<String> allPhotos = new ArrayList<>(hotel.getPhotoPaths());
+                allPhotos.addAll(newlySavedPhotos);
+                hotel.setPhotoPaths(allPhotos);
+            }
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest().body(exception.getMessage());
+        } catch (IllegalStateException exception) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save hotel photos");
+        }
+
+        try {
+            Hotel updated = hotelRepository.save(hotel);
+            if (replacePhotos) {
+                hotelPhotoStorageService.deleteHotelPhotos(oldPhotos);
+            }
+            return ResponseEntity.ok(toResponse(updated));
+        } catch (RuntimeException exception) {
+            hotelPhotoStorageService.deleteHotelPhotos(newlySavedPhotos);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update hotel");
+        }
     }
 
     @Override
+    @Transactional
     public ResponseEntity<?> deleteHotel(int id, String deletedBy) {
         Optional<Hotel> optionalHotel = hotelRepository.findById(id);
         if (optionalHotel.isEmpty()) {
@@ -150,12 +209,31 @@ public class HotelServiceImpl implements HotelService {
         }
 
         Hotel hotel = optionalHotel.get();
+        List<String> photoNames = new ArrayList<>(hotel.getPhotoPaths());
+
         if (!isBlank(deletedBy)) {
             hotel.setUpdatedby(deletedBy.trim());
             hotelRepository.save(hotel);
         }
-        hotelRepository.delete(hotel);
-        return ResponseEntity.noContent().build();
+
+        try {
+            hotelRepository.delete(hotel);
+            hotelPhotoStorageService.deleteHotelPhotos(photoNames);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException exception) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete hotel");
+        }
+    }
+
+    @Override
+    public ResponseEntity<Resource> getHotelPhoto(String filename) {
+        try {
+            Resource resource = hotelPhotoStorageService.loadHotelPhoto(filename);
+            MediaType mediaType = resolveMediaType(filename);
+            return ResponseEntity.ok().contentType(mediaType).body(resource);
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     private HotelResponseDto toResponse(Hotel hotel) {
@@ -169,6 +247,7 @@ public class HotelServiceImpl implements HotelService {
                 .country(hotel.getCountry())
                 .pincode(hotel.getPincode())
                 .rating(hotel.getRating())
+                .photoUrls(hotel.getPhotoPaths().stream().map(hotelPhotoStorageService::toPhotoUrl).toList())
                 .createdat(hotel.getCreatedat())
                 .updatedat(hotel.getUpdatedat())
                 .createdby(hotel.getCreatedby())
@@ -188,6 +267,24 @@ public class HotelServiceImpl implements HotelService {
 
     private String normalizeFilter(String value) {
         return isBlank(value) ? "" : value.trim();
+    }
+
+    private MediaType resolveMediaType(String filename) {
+        if (filename == null) {
+            return MediaType.APPLICATION_OCTET_STREAM;
+        }
+
+        String lowerFilename = filename.toLowerCase();
+        if (lowerFilename.endsWith(".png")) {
+            return MediaType.IMAGE_PNG;
+        }
+        if (lowerFilename.endsWith(".webp")) {
+            return MediaType.parseMediaType("image/webp");
+        }
+        if (lowerFilename.endsWith(".gif")) {
+            return MediaType.IMAGE_GIF;
+        }
+        return MediaType.IMAGE_JPEG;
     }
 
     private String trimOrNull(String value) {
