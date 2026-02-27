@@ -13,6 +13,7 @@ class BookingResponseDto {
     required this.totalAmount,
     required this.bookingStatus,
     required this.paymentStatus,
+    required this.paymentMethod,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -30,6 +31,7 @@ class BookingResponseDto {
   final double totalAmount;
   final String bookingStatus;
   final String paymentStatus;
+  final String paymentMethod;
   final String createdAt;
   final String updatedAt;
 
@@ -47,6 +49,7 @@ class BookingResponseDto {
     double? totalAmount,
     String? bookingStatus,
     String? paymentStatus,
+    String? paymentMethod,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -64,6 +67,7 @@ class BookingResponseDto {
       totalAmount: totalAmount ?? this.totalAmount,
       bookingStatus: bookingStatus ?? this.bookingStatus,
       paymentStatus: paymentStatus ?? this.paymentStatus,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -84,9 +88,15 @@ class BookingResponseDto {
       totalAmount: _toDouble(json['totalAmount']),
       bookingStatus: (json['bookingStatus'] as String?)?.trim().toUpperCase() ?? '',
       paymentStatus: (json['paymentStatus'] as String?)?.trim().toUpperCase() ?? '',
+      paymentMethod: _normalizePaymentMethod(json['paymentMethod']),
       createdAt: (json['createdAt'] as String?)?.trim() ?? '',
       updatedAt: (json['updatedAt'] as String?)?.trim() ?? '',
     );
+  }
+
+  static String _normalizePaymentMethod(dynamic value) {
+    final method = (value?.toString() ?? '').trim().toUpperCase();
+    return method.isEmpty ? 'RAZORPAY' : method;
   }
 
   static int _toInt(dynamic value) {

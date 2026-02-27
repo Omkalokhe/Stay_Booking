@@ -28,7 +28,6 @@ public class PaymentTransaction {
     @JoinColumn(name = "booking_id", nullable = false)
     private Booking booking;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false, length = 40)
     private PaymentMethod paymentMethod;
 

@@ -41,7 +41,7 @@ class NotificationController extends GetxController {
   final errorMessage = ''.obs;
   final _loadingContextByReferenceId = <int>{};
   bool _isFetchingUnreadCount = false;
-  static const Duration _pollInterval = Duration(seconds: 30);
+  static const Duration _pollInterval = Duration(seconds: 5);
   Timer? _pollingTimer;
   Worker? _sessionWorker;
 

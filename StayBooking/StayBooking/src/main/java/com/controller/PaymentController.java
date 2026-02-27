@@ -26,4 +26,9 @@ public class PaymentController {
     public ResponseEntity<?> verifyPayment(@RequestBody VerifyRazorpayPaymentRequestDto requestDto) {
         return paymentService.verifyRazorpayPayment(requestDto);
     }
+
+    @GetMapping("/status")
+    public ResponseEntity<?> getPaymentStatus(@RequestParam Integer bookingId) {
+        return paymentService.getRazorpayPaymentStatus(bookingId);
+    }
 }

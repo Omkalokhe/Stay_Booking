@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:stay_booking_frontend/controller/booking/booking_controller.dart';
+import 'package:stay_booking_frontend/controller/payment/payment_flow_controller.dart';
 import 'package:stay_booking_frontend/model/booking_response_dto.dart';
 import 'package:stay_booking_frontend/model/update_booking_request_dto.dart';
 import 'package:stay_booking_frontend/model/update_booking_status_request_dto.dart';
@@ -18,6 +21,7 @@ class BookingTab extends StatefulWidget {
 
 class _BookingTabState extends State<BookingTab> {
   late final BookingController _controller;
+  late final PaymentFlowController _paymentController;
   final _searchController = TextEditingController();
 
   bool get _canUpdateStatus => _controller.canUpdateBookingAndPaymentStatus;
@@ -30,6 +34,14 @@ class _BookingTabState extends State<BookingTab> {
     _controller = Get.isRegistered<BookingController>(tag: tag)
         ? Get.find<BookingController>(tag: tag)
         : Get.put(BookingController(currentUser: widget.user), tag: tag);
+    final paymentTag = 'payment-$tag';
+    _paymentController = Get.isRegistered<PaymentFlowController>(tag: paymentTag)
+        ? Get.find<PaymentFlowController>(tag: paymentTag)
+        : Get.put(
+            PaymentFlowController(),
+            tag: paymentTag,
+            permanent: true,
+          );
   }
 
   @override
@@ -89,8 +101,9 @@ class _BookingTabState extends State<BookingTab> {
                       onStatus: _canUpdateStatus
                           ? _openStatusUpdateSheet
                           : null,
-                      onPay: _openPayBookingSheet,
-                      onCancel: _controller.cancelBooking,
+                      onPayNow: _openPayNowSheet,
+                      onReview: _openHotelReviewScreen,
+                      onCancel: _cancelBookingAndRefresh,
                     )
                   else
                     ..._controller.items.map(_buildBookingCard),
@@ -596,129 +609,6 @@ class _BookingTabState extends State<BookingTab> {
     );
   }
 
-  bool _canPayBooking(BookingResponseDto booking) {
-    final bookingStatus = booking.bookingStatus.trim().toUpperCase();
-    final paymentStatus = booking.paymentStatus.trim().toUpperCase();
-    const blockedBookingStatuses = {'CANCELLED', 'COMPLETED', 'NO_SHOW'};
-    const payablePaymentStatuses = {'PENDING', 'FAILED'};
-    return !blockedBookingStatuses.contains(bookingStatus) &&
-        payablePaymentStatuses.contains(paymentStatus);
-  }
-
-  Future<void> _openPayBookingSheet(BookingResponseDto booking) async {
-    if (!_canPayBooking(booking)) {
-      return;
-    }
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (context) {
-        return SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              8,
-              16,
-              16 + MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Complete Payment',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Secure checkout powered by Razorpay (UPI, cards, net banking, wallets).',
-                ),
-                const SizedBox(height: 14),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF4F2FA),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        booking.hotelName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${booking.roomType} | ${booking.checkInDate} to ${booking.checkOutDate}',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.black54),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          const Text(
-                            'Amount',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          const Spacer(),
-                          Text(
-                            'Rs ${booking.totalAmount.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  width: double.infinity,
-                  child: Obx(
-                    () => FilledButton.icon(
-                      onPressed: _controller.isSubmitting.value
-                          ? null
-                          : () async {
-                              final success = await _controller
-                                  .payBookingWithRazorpay(booking);
-                              if (success && context.mounted) {
-                                Navigator.of(context).pop();
-                              }
-                            },
-                      icon: _controller.isSubmitting.value
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.payments_outlined),
-                      label: Text(
-                        _controller.isSubmitting.value
-                            ? 'Processing...'
-                            : 'Pay with Razorpay',
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _openBookingDetails(BookingResponseDto booking) async {
     final latest = await _controller.getBookingById(booking.id);
     final data = latest ?? booking;
@@ -766,6 +656,177 @@ class _BookingTabState extends State<BookingTab> {
     );
   }
 
+  bool _canPayNow(BookingResponseDto booking) {
+    final paymentStatus = booking.paymentStatus.trim().toUpperCase();
+    final bookingStatus = booking.bookingStatus.trim().toUpperCase();
+    const blockedBookingStatuses = {'CANCELLED', 'COMPLETED', 'NO_SHOW'};
+    return paymentStatus == 'PENDING' &&
+        !blockedBookingStatuses.contains(bookingStatus);
+  }
+
+  bool _canReview(BookingResponseDto booking) {
+    final paymentStatus = booking.paymentStatus.trim().toUpperCase();
+    final bookingStatus = booking.bookingStatus.trim().toUpperCase();
+    return paymentStatus == 'SUCCESS' ||
+        (paymentStatus == 'REFUNDED' && bookingStatus == 'CANCELLED');
+  }
+
+  Future<void> _startPaymentForBooking(BookingResponseDto booking) async {
+    if (!_canPayNow(booking)) return;
+    await _paymentController.startPayment(bookingId: booking.id);
+    if (!mounted) return;
+
+    final state = _paymentController.uiState.value;
+    final msg = _paymentController.message.value.trim();
+    if (state == PaymentUiState.success) {
+      _controller.markBookingPaidLocally(booking.id);
+      if (mounted) {
+        setState(() {});
+      }
+      await _controller.loadFirstPage(showLoader: false);
+      if (mounted) {
+        setState(() {});
+      }
+      unawaited(
+        _controller.syncBookingAfterPayment(
+          booking.id,
+          maxAttempts: 12,
+          interval: const Duration(seconds: 3),
+        ),
+      );
+    }
+    if (msg.isNotEmpty) {
+      Get.snackbar(
+        state == PaymentUiState.success ? 'Payment Success' : 'Payment Update',
+        msg,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  Future<void> _openPayNowSheet(BookingResponseDto booking) async {
+    if (!_canPayNow(booking)) return;
+    _paymentController.resetState();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              8,
+              16,
+              16 + MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Obx(
+              () => Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Complete Payment',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF4F2FA),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          booking.hotelName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${booking.roomType} | ${booking.checkInDate} to ${booking.checkOutDate}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.black54),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            const Text(
+                              'Amount',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            const Spacer(),
+                            Text(
+                              'Rs ${booking.totalAmount.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_paymentController.message.value.trim().isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      _paymentController.message.value,
+                      style: TextStyle(
+                        color: _paymentController.uiState.value ==
+                                PaymentUiState.success
+                            ? const Color(0xFF1B7D39)
+                            : const Color(0xFFC62828),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _paymentController.isLoading.value
+                          ? null
+                          : () async {
+                              await _startPaymentForBooking(booking);
+                              if (!mounted) return;
+                              if (_paymentController.uiState.value ==
+                                  PaymentUiState.success) {
+                                Navigator.of(this.context).pop();
+                              }
+                            },
+                      icon: _paymentController.isLoading.value
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.payments_outlined),
+                      label: Text(
+                        _paymentController.isLoading.value
+                            ? 'Processing...'
+                            : 'Pay Now',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _openHotelReviewScreen(BookingResponseDto booking) async {
     await Get.to(
       () => HotelReviewScreen(
@@ -774,6 +835,16 @@ class _BookingTabState extends State<BookingTab> {
         currentUser: widget.user,
       ),
     );
+  }
+
+  Future<void> _cancelBookingAndRefresh(BookingResponseDto booking) async {
+    await _controller.cancelBooking(booking);
+    if (!mounted) return;
+    setState(() {});
+    await _controller.loadFirstPage(showLoader: false);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Widget _buildBookingCard(BookingResponseDto booking) {
@@ -872,19 +943,25 @@ class _BookingTabState extends State<BookingTab> {
                   child: _bookingActionButton(
                     label: _canUpdateStatus
                         ? 'Status'
-                        : _canPayBooking(booking)
-                        ? 'Pay'
-                        : 'Review',
+                        : _canPayNow(booking)
+                        ? 'Pay Now'
+                        : _canReview(booking)
+                        ? 'Review'
+                        : 'View',
                     icon: _canUpdateStatus
                         ? Icons.swap_horiz_outlined
-                        : _canPayBooking(booking)
+                        : _canPayNow(booking)
                         ? Icons.payments_outlined
-                        : Icons.rate_review_outlined,
+                        : _canReview(booking)
+                        ? Icons.rate_review_outlined
+                        : Icons.visibility_outlined,
                     onTap: _canUpdateStatus
                         ? () => _openStatusUpdateSheet(booking)
-                        : _canPayBooking(booking)
-                        ? () => _openPayBookingSheet(booking)
-                        : () => _openHotelReviewScreen(booking),
+                        : _canPayNow(booking)
+                        ? () => _openPayNowSheet(booking)
+                        : _canReview(booking)
+                        ? () => _openHotelReviewScreen(booking)
+                        : () => _openBookingDetails(booking),
                     expand: true,
                   ),
                 ),
@@ -893,7 +970,7 @@ class _BookingTabState extends State<BookingTab> {
                   child: _bookingActionButton(
                     label: 'Cancel',
                     icon: Icons.cancel_outlined,
-                    onTap: () => _controller.cancelBooking(booking),
+                    onTap: () => _cancelBookingAndRefresh(booking),
                     isDestructive: true,
                     expand: true,
                   ),
@@ -1020,7 +1097,8 @@ class _BookingsTable extends StatelessWidget {
     required this.onView,
     required this.onEdit,
     required this.onStatus,
-    required this.onPay,
+    required this.onPayNow,
+    required this.onReview,
     required this.onCancel,
   });
 
@@ -1028,7 +1106,8 @@ class _BookingsTable extends StatelessWidget {
   final ValueChanged<BookingResponseDto> onView;
   final ValueChanged<BookingResponseDto> onEdit;
   final ValueChanged<BookingResponseDto>? onStatus;
-  final ValueChanged<BookingResponseDto>? onPay;
+  final ValueChanged<BookingResponseDto> onPayNow;
+  final ValueChanged<BookingResponseDto> onReview;
   final ValueChanged<BookingResponseDto> onCancel;
 
   @override
@@ -1079,11 +1158,17 @@ class _BookingsTable extends StatelessWidget {
                             onPressed: () => onStatus!(b),
                             tooltip: 'Status',
                           ),
-                        if (onPay != null && _canPayBookingRow(b))
+                        if (onStatus == null && _canPayNowRow(b))
                           IconButton(
                             icon: const Icon(Icons.payments_outlined),
-                            onPressed: () => onPay!(b),
+                            onPressed: () => onPayNow(b),
                             tooltip: 'Pay Now',
+                          ),
+                        if (onStatus == null && _canReviewRow(b))
+                          IconButton(
+                            icon: const Icon(Icons.rate_review_outlined),
+                            onPressed: () => onReview(b),
+                            tooltip: 'Review',
                           ),
                         IconButton(
                           icon: const Icon(Icons.cancel_outlined),
@@ -1101,13 +1186,19 @@ class _BookingsTable extends StatelessWidget {
     );
   }
 
-  bool _canPayBookingRow(BookingResponseDto booking) {
-    final bookingStatus = booking.bookingStatus.trim().toUpperCase();
+  bool _canPayNowRow(BookingResponseDto booking) {
     final paymentStatus = booking.paymentStatus.trim().toUpperCase();
+    final bookingStatus = booking.bookingStatus.trim().toUpperCase();
     const blockedBookingStatuses = {'CANCELLED', 'COMPLETED', 'NO_SHOW'};
-    const payablePaymentStatuses = {'PENDING', 'FAILED'};
-    return !blockedBookingStatuses.contains(bookingStatus) &&
-        payablePaymentStatuses.contains(paymentStatus);
+    return paymentStatus == 'PENDING' &&
+        !blockedBookingStatuses.contains(bookingStatus);
+  }
+
+  bool _canReviewRow(BookingResponseDto booking) {
+    final paymentStatus = booking.paymentStatus.trim().toUpperCase();
+    final bookingStatus = booking.bookingStatus.trim().toUpperCase();
+    return paymentStatus == 'SUCCESS' ||
+        (paymentStatus == 'REFUNDED' && bookingStatus == 'CANCELLED');
   }
 }
 

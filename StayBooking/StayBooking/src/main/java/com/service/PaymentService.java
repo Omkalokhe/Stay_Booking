@@ -8,4 +8,6 @@ public interface PaymentService {
     ResponseEntity<?> createRazorpayOrder(CreateRazorpayOrderRequestDto requestDto);
 
     ResponseEntity<?> verifyRazorpayPayment(VerifyRazorpayPaymentRequestDto requestDto);
+
+    ResponseEntity<?> getRazorpayPaymentStatus(Integer bookingId);
 }

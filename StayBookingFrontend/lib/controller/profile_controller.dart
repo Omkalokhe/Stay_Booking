@@ -28,7 +28,6 @@ class ProfileController extends GetxController {
   final isSendingResetOtp = false.obs;
   final isEditing = false.obs;
   final errorMessage = ''.obs;
-  final formKey = GlobalKey<FormState>();
 
   final fnameController = TextEditingController();
   final lnameController = TextEditingController();
@@ -103,7 +102,7 @@ class ProfileController extends GetxController {
     return null;
   }
 
-  Future<void> submitUpdate() async {
+  Future<void> submitUpdate(GlobalKey<FormState> formKey) async {
     if (!(formKey.currentState?.validate() ?? false)) return;
     final currentUser = user.value ?? <String, dynamic>{};
     final dynamic idRaw = currentUser['id'];

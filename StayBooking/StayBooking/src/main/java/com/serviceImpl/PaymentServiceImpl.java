@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -236,6 +237,65 @@ public class PaymentServiceImpl implements PaymentService {
                 "Payment successful. Booking confirmed."
         );
         return ResponseEntity.ok(responseDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> getRazorpayPaymentStatus(Integer bookingId) {
+        if (bookingId == null) {
+            return ResponseEntity.badRequest().body("bookingId is required");
+        }
+
+        Optional<Booking> optionalBooking = bookingRepository.findById(bookingId);
+        if (optionalBooking.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Booking not found with id: " + bookingId);
+        }
+
+        Booking booking = optionalBooking.get();
+        Optional<PaymentTransaction> optionalLatestTx =
+                paymentTransactionRepository.findTopByBooking_IdOrderByCreatedAtDesc(booking.getId());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("bookingId", booking.getId());
+        response.put("paymentMethod", booking.getPaymentMethod());
+        response.put("paymentStatus", booking.getPaymentStatus());
+        response.put("bookingStatus", booking.getBookingStatus());
+        response.put("paymentReference", booking.getPaymentReference());
+        response.put("isFinal", booking.getPaymentStatus() == PaymentStatus.SUCCESS
+                || booking.getPaymentStatus() == PaymentStatus.FAILED
+                || booking.getPaymentStatus() == PaymentStatus.REFUNDED);
+
+        if (optionalLatestTx.isPresent()) {
+            PaymentTransaction tx = optionalLatestTx.get();
+            response.put("providerOrderId", tx.getProviderOrderId());
+            response.put("providerPaymentId", tx.getProviderPaymentId());
+            response.put("providerStatus", tx.getPaymentStatus());
+            response.put("lastErrorCode", tx.getErrorCode());
+            response.put("lastErrorDescription", tx.getErrorDescription());
+            response.put("updatedAt", tx.getUpdatedAt());
+        } else {
+            response.put("providerOrderId", null);
+            response.put("providerPaymentId", null);
+            response.put("providerStatus", null);
+            response.put("lastErrorCode", null);
+            response.put("lastErrorDescription", null);
+            response.put("updatedAt", booking.getUpdatedAt());
+        }
+
+        String frontendMessage;
+        if (booking.getPaymentStatus() == PaymentStatus.SUCCESS) {
+            frontendMessage = "Payment successful.";
+        } else if (booking.getPaymentStatus() == PaymentStatus.FAILED) {
+            frontendMessage = "Payment failed.";
+        } else if (booking.getPaymentStatus() == PaymentStatus.REFUNDED) {
+            frontendMessage = "Payment refunded.";
+        } else {
+            frontendMessage = "Payment is still processing.";
+        }
+        response.put("frontendMessage", frontendMessage);
+
+        return ResponseEntity.ok(response);
     }
 
     private VerifyRazorpayPaymentResponseDto buildVerifyResponse(Booking booking,

@@ -3,22 +3,30 @@ import 'package:get/get.dart';
 import 'package:stay_booking_frontend/controller/auth_controller.dart';
 import 'package:stay_booking_frontend/controller/profile_controller.dart';
 
-class ProfileTab extends StatelessWidget {
+class ProfileTab extends StatefulWidget {
   const ProfileTab({required this.user, super.key});
 
   final Map<String, dynamic> user;
 
   @override
+  State<ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends State<ProfileTab> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  @override
   Widget build(BuildContext context) {
     final authController = Get.find<AuthController>();
-    final emailKey = (user['email'] as String?)?.trim() ?? 'guest';
-    final roleKey = (user['role'] as String?)?.trim().toLowerCase() ?? 'user';
-    final idKey = user['id']?.toString().trim();
+    final emailKey = (widget.user['email'] as String?)?.trim() ?? 'guest';
+    final roleKey =
+        (widget.user['role'] as String?)?.trim().toLowerCase() ?? 'user';
+    final idKey = widget.user['id']?.toString().trim();
     final profileTag = 'profile-$roleKey-$emailKey-${idKey ?? 'noid'}';
     final profileController =
         Get.isRegistered<ProfileController>(tag: profileTag)
         ? Get.find<ProfileController>(tag: profileTag)
-        : Get.put(ProfileController(initialUser: user), tag: profileTag);
+        : Get.put(ProfileController(initialUser: widget.user), tag: profileTag);
 
     return Obx(() {
       final currentUser = profileController.user.value ?? <String, dynamic>{};
@@ -123,7 +131,7 @@ class ProfileTab extends StatelessWidget {
                   child: ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: contentWidth),
                     child: Form(
-                      key: profileController.formKey,
+                      key: _formKey,
                       child: Obx(
                         () => KeyedSubtree(
                           key: ValueKey(profileController.isEditing.value),
@@ -223,8 +231,8 @@ class ProfileTab extends StatelessWidget {
                                                     .isUpdating
                                                     .value
                                                 ? null
-                                                : profileController
-                                                      .submitUpdate,
+                                                : () => profileController
+                                                      .submitUpdate(_formKey),
                                             icon:
                                                 profileController
                                                     .isUpdating
