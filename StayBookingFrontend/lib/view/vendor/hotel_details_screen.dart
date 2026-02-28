@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:stay_booking_frontend/model/hotel_form/hotel_model.dart';
 import 'package:stay_booking_frontend/model/hotel_response_dto.dart';
 import 'package:stay_booking_frontend/model/room_response_dto.dart';
 import 'package:stay_booking_frontend/service/core/api_endpoints.dart';
+import 'package:stay_booking_frontend/service/core/map_launcher.dart';
 import 'package:stay_booking_frontend/service/hotel/hotel_service.dart';
 import 'package:stay_booking_frontend/service/room/room_service.dart';
 import 'package:stay_booking_frontend/view/vendor/room_view_screen.dart';
@@ -171,6 +173,21 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   }
 
   Widget _detailCard(HotelResponseDto hotel) {
+    final hotelModel = HotelModel(
+      id: hotel.id,
+      name: hotel.name,
+      city: hotel.city,
+      country: hotel.country,
+      description: hotel.description,
+      address: hotel.address,
+      state: hotel.state,
+      pincode: hotel.pincode,
+      rating: hotel.rating,
+      createdBy: hotel.createdBy,
+      updatedBy: hotel.updatedBy,
+      photoUrls: hotel.photoUrls,
+    );
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -180,9 +197,22 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            hotel.name,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  hotel.name,
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                ),
+              ),
+              Tooltip(
+                message: 'Open in Maps',
+                child: IconButton(
+                  onPressed: () => _handleOpenMap(hotelModel),
+                  icon: const Icon(Icons.map_outlined),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Text('${hotel.city}, ${hotel.state}, ${hotel.country}'),
@@ -197,6 +227,26 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _handleOpenMap(HotelModel hotel) async {
+    try {
+      await openMap(fullAddress: hotel.fullAddress);
+    } on FormatException catch (error) {
+      _showMapError(error.message.toString());
+    } catch (_) {
+      _showMapError('Unable to open Google Maps right now.');
+    }
+  }
+
+  void _showMapError(String message) {
+    if (!mounted) return;
+    Get.snackbar(
+      'Map unavailable',
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(12),
     );
   }
 

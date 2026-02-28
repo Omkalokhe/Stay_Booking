@@ -23,7 +23,7 @@ class NotificationBellAction extends StatelessWidget {
         icon: Stack(
           clipBehavior: Clip.none,
           children: [
-            const Icon(Icons.notifications_none_rounded),
+            const Icon(Icons.notifications_none_rounded, color: Colors.white),
             if (count > 0)
               Positioned(
                 right: -7,

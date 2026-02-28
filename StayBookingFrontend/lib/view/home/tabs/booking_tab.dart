@@ -35,13 +35,10 @@ class _BookingTabState extends State<BookingTab> {
         ? Get.find<BookingController>(tag: tag)
         : Get.put(BookingController(currentUser: widget.user), tag: tag);
     final paymentTag = 'payment-$tag';
-    _paymentController = Get.isRegistered<PaymentFlowController>(tag: paymentTag)
+    _paymentController =
+        Get.isRegistered<PaymentFlowController>(tag: paymentTag)
         ? Get.find<PaymentFlowController>(tag: paymentTag)
-        : Get.put(
-            PaymentFlowController(),
-            tag: paymentTag,
-            permanent: true,
-          );
+        : Get.put(PaymentFlowController(), tag: paymentTag, permanent: true);
   }
 
   @override
@@ -782,7 +779,8 @@ class _BookingTabState extends State<BookingTab> {
                     Text(
                       _paymentController.message.value,
                       style: TextStyle(
-                        color: _paymentController.uiState.value ==
+                        color:
+                            _paymentController.uiState.value ==
                                 PaymentUiState.success
                             ? const Color(0xFF1B7D39)
                             : const Color(0xFFC62828),
@@ -990,8 +988,12 @@ class _BookingTabState extends State<BookingTab> {
     bool isDestructive = false,
     bool expand = false,
   }) {
-    final fg = isDestructive ? const Color(0xFFC62828) : const Color(0xFF4A4458);
-    final bg = isDestructive ? const Color(0xFFFDECEC) : const Color(0xFFF4F2FA);
+    final fg = isDestructive
+        ? const Color(0xFFC62828)
+        : const Color(0xFF4A4458);
+    final bg = isDestructive
+        ? const Color(0xFFFDECEC)
+        : const Color(0xFFF4F2FA);
     return InkWell(
       borderRadius: BorderRadius.circular(999),
       onTap: () async => onTap(),
@@ -1000,12 +1002,17 @@ class _BookingTabState extends State<BookingTab> {
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: bg == const Color(0xFFF4F2FA) ? const Color(0xFFE1DDEE) : const Color(0xFFF6D3D3)),
+          border: Border.all(
+            color: bg == const Color(0xFFF4F2FA)
+                ? const Color(0xFFE1DDEE)
+                : const Color(0xFFF6D3D3),
+          ),
         ),
         child: Row(
           mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-          mainAxisAlignment:
-              expand ? MainAxisAlignment.center : MainAxisAlignment.start,
+          mainAxisAlignment: expand
+              ? MainAxisAlignment.center
+              : MainAxisAlignment.start,
           children: [
             Icon(icon, size: 16, color: fg),
             const SizedBox(width: 6),

@@ -27,6 +27,14 @@ class HotelModel {
   final String? updatedBy;
   final List<String> photoUrls;
 
+  String get fullAddress {
+    final parts = <String>[name, address, city, state, pincode]
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .toList(growable: false);
+    return parts.join(', ');
+  }
+
   factory HotelModel.fromJson(Map<String, dynamic> json) {
     final rawUrls = json['photoUrls'];
     return HotelModel(

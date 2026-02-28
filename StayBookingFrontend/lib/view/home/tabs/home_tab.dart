@@ -22,15 +22,15 @@ class HomeTab extends StatelessWidget {
         : Get.put(CustomerHotelController(), tag: _tag);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: Color(0xFF3F1D89),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Color(0xFF3F1D89),
         elevation: 0,
         centerTitle: false,
         title: const Text(
           'StayBook',
           style: TextStyle(
-            color: Color(0xFF1B1F2A),
+            color: Colors.white,
             fontWeight: FontWeight.w800,
             letterSpacing: 0.2,
           ),
@@ -68,7 +68,9 @@ class HomeTab extends StatelessWidget {
                     Obx(
                       () => hotelController.isLoading.value
                           ? const LinearProgressIndicator(
-                              borderRadius: BorderRadius.all(Radius.circular(99)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(99),
+                              ),
                             )
                           : const SizedBox.shrink(),
                     ),
@@ -77,7 +79,9 @@ class HomeTab extends StatelessWidget {
                           ? const SizedBox.shrink()
                           : Padding(
                               padding: const EdgeInsets.only(top: 10),
-                              child: _errorBanner(hotelController.errorMessage.value),
+                              child: _errorBanner(
+                                hotelController.errorMessage.value,
+                              ),
                             ),
                     ),
                     const SizedBox(height: 12),
@@ -86,12 +90,13 @@ class HomeTab extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1B1F2A),
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 10),
                     Obx(
-                      () => hotelController.hotels.isEmpty &&
+                      () =>
+                          hotelController.hotels.isEmpty &&
                               !hotelController.isLoading.value
                           ? _emptyState()
                           : _hotelGrid(context, hotelController),
@@ -114,10 +119,15 @@ class HomeTab extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF14213D), Color(0xFF24407D)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        // gradient: const LinearGradient(
+        //   colors: [Color(0xFF14213D), Color(0xFF24407D)],
+        //   begin: Alignment.topLeft,
+        //   end: Alignment.bottomRight,
+        // ),
+        image: const DecorationImage(
+          opacity: .40,
+          image: AssetImage('assets/images/hotel.png'),
+          fit: BoxFit.cover, // makes image cover full container
         ),
         boxShadow: [
           BoxShadow(
@@ -172,7 +182,10 @@ class HomeTab extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFFECF1FF),
                   foregroundColor: const Color(0xFF1E2A48),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -189,7 +202,9 @@ class HomeTab extends StatelessWidget {
               if (c.cityFilterController.text.trim().isNotEmpty)
                 _filterChip('City: ${c.cityFilterController.text.trim()}'),
               if (c.countryFilterController.text.trim().isNotEmpty)
-                _filterChip('Country: ${c.countryFilterController.text.trim()}'),
+                _filterChip(
+                  'Country: ${c.countryFilterController.text.trim()}',
+                ),
               _filterChip('Sort: ${c.sortBy.value} ${c.direction.value}'),
             ];
             return Wrap(spacing: 8, runSpacing: 8, children: chips);
@@ -222,10 +237,12 @@ class HomeTab extends StatelessWidget {
     BuildContext context,
     CustomerHotelController c,
   ) async {
-    final localCityController =
-        TextEditingController(text: c.cityFilterController.text);
-    final localCountryController =
-        TextEditingController(text: c.countryFilterController.text);
+    final localCityController = TextEditingController(
+      text: c.cityFilterController.text,
+    );
+    final localCountryController = TextEditingController(
+      text: c.countryFilterController.text,
+    );
     String selectedSort = c.sortBy.value;
     String selectedDirection = c.direction.value;
 
@@ -236,7 +253,8 @@ class HomeTab extends StatelessWidget {
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (sheetContext, setState) {
-            final maxSheetHeight = MediaQuery.of(sheetContext).size.height * 0.88;
+            final maxSheetHeight =
+                MediaQuery.of(sheetContext).size.height * 0.88;
             return SafeArea(
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: maxSheetHeight),
@@ -253,22 +271,45 @@ class HomeTab extends StatelessWidget {
                     children: [
                       const Text(
                         'Hotel Filters',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       const SizedBox(height: 12),
-                      _sheetInput(localCityController, 'City', Icons.location_city_outlined),
+                      _sheetInput(
+                        localCityController,
+                        'City',
+                        Icons.location_city_outlined,
+                      ),
                       const SizedBox(height: 10),
-                      _sheetInput(localCountryController, 'Country', Icons.public_outlined),
+                      _sheetInput(
+                        localCountryController,
+                        'Country',
+                        Icons.public_outlined,
+                      ),
                       const SizedBox(height: 10),
                       DropdownButtonFormField<String>(
                         initialValue: selectedSort,
-                        decoration: _sheetDecoration('Sort By', Icons.sort_rounded),
+                        decoration: _sheetDecoration(
+                          'Sort By',
+                          Icons.sort_rounded,
+                        ),
                         items: const [
-                          DropdownMenuItem(value: 'updatedat', child: Text('Updated')),
-                          DropdownMenuItem(value: 'createdat', child: Text('Created')),
+                          DropdownMenuItem(
+                            value: 'updatedat',
+                            child: Text('Updated'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'createdat',
+                            child: Text('Created'),
+                          ),
                           DropdownMenuItem(value: 'name', child: Text('Name')),
                           DropdownMenuItem(value: 'city', child: Text('City')),
-                          DropdownMenuItem(value: 'country', child: Text('Country')),
+                          DropdownMenuItem(
+                            value: 'country',
+                            child: Text('Country'),
+                          ),
                         ],
                         onChanged: (value) {
                           if (value == null) return;
@@ -278,10 +319,19 @@ class HomeTab extends StatelessWidget {
                       const SizedBox(height: 10),
                       DropdownButtonFormField<String>(
                         initialValue: selectedDirection,
-                        decoration: _sheetDecoration('Direction', Icons.swap_vert_rounded),
+                        decoration: _sheetDecoration(
+                          'Direction',
+                          Icons.swap_vert_rounded,
+                        ),
                         items: const [
-                          DropdownMenuItem(value: 'asc', child: Text('Ascending')),
-                          DropdownMenuItem(value: 'desc', child: Text('Descending')),
+                          DropdownMenuItem(
+                            value: 'asc',
+                            child: Text('Ascending'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'desc',
+                            child: Text('Descending'),
+                          ),
                         ],
                         onChanged: (value) {
                           if (value == null) return;
@@ -305,7 +355,8 @@ class HomeTab extends StatelessWidget {
                           Expanded(
                             child: FilledButton(
                               onPressed: () {
-                                c.cityFilterController.text = localCityController.text.trim();
+                                c.cityFilterController.text =
+                                    localCityController.text.trim();
                                 c.countryFilterController.text =
                                     localCountryController.text.trim();
                                 c.setSortBy(selectedSort);
@@ -331,7 +382,11 @@ class HomeTab extends StatelessWidget {
     localCountryController.dispose();
   }
 
-  Widget _sheetInput(TextEditingController controller, String label, IconData icon) {
+  Widget _sheetInput(
+    TextEditingController controller,
+    String label,
+    IconData icon,
+  ) {
     return TextField(
       controller: controller,
       decoration: _sheetDecoration(label, icon),
@@ -371,7 +426,9 @@ class HomeTab extends StatelessWidget {
           spacing: gap,
           runSpacing: gap,
           children: c.hotels
-              .map((hotel) => SizedBox(width: cardWidth, child: _hotelCard(hotel)))
+              .map(
+                (hotel) => SizedBox(width: cardWidth, child: _hotelCard(hotel)),
+              )
               .toList(),
         );
       },
@@ -403,14 +460,17 @@ class HomeTab extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(18),
+              ),
               child: AspectRatio(
                 aspectRatio: 16 / 9,
                 child: image.isNotEmpty
                     ? Image.network(
                         image,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => _imagePlaceholder(),
+                        errorBuilder: (context, error, stackTrace) =>
+                            _imagePlaceholder(),
                       )
                     : _imagePlaceholder(),
               ),
@@ -424,12 +484,19 @@ class HomeTab extends StatelessWidget {
                     hotel.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF667085)),
+                      const Icon(
+                        Icons.location_on_outlined,
+                        size: 16,
+                        color: Color(0xFF667085),
+                      ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -448,13 +515,19 @@ class HomeTab extends StatelessWidget {
                         : hotel.description,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(height: 1.35, color: Color(0xFF2F3645)),
+                    style: const TextStyle(
+                      height: 1.35,
+                      color: Color(0xFF2F3645),
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 5,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFE7EEFF),
                           borderRadius: BorderRadius.circular(999),
@@ -492,7 +565,11 @@ class HomeTab extends StatelessWidget {
     return Container(
       color: const Color(0xFFF0F3FA),
       alignment: Alignment.center,
-      child: const Icon(Icons.hotel_rounded, size: 38, color: Color(0xFF7A889F)),
+      child: const Icon(
+        Icons.hotel_rounded,
+        size: 38,
+        color: Color(0xFF7A889F),
+      ),
     );
   }
 
@@ -520,13 +597,18 @@ class HomeTab extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           OutlinedButton.icon(
-            onPressed: c.page.value < (c.totalPages.value - 1) ? c.goToNextPage : null,
+            onPressed: c.page.value < (c.totalPages.value - 1)
+                ? c.goToNextPage
+                : null,
             icon: const Icon(Icons.arrow_forward_rounded, size: 16),
             label: const Text('Next'),
           ),
           Text(
             'Total ${c.totalElements.value}',
-            style: const TextStyle(color: Color(0xFF667085), fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              color: Color(0xFF667085),
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -567,12 +649,19 @@ class HomeTab extends StatelessWidget {
       ),
       child: const Column(
         children: [
-          Icon(Icons.travel_explore_rounded, size: 40, color: Color(0xFF7A889F)),
+          Icon(
+            Icons.travel_explore_rounded,
+            size: 40,
+            color: Color(0xFF7A889F),
+          ),
           SizedBox(height: 10),
           Text(
             'No hotels found for current filters.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Color(0xFF667085), fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: Color(0xFF667085),
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
