@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:stay_booking_frontend/controller/auth_controller.dart';
@@ -24,16 +26,35 @@ class HomeTab extends StatelessWidget {
     return Scaffold(
       backgroundColor: Color(0xFF3F1D89),
       appBar: AppBar(
-        backgroundColor: Color(0xFF3F1D89),
+        backgroundColor: const Color(0xFF3F1D89),
         elevation: 0,
         centerTitle: false,
-        title: const Text(
-          'StayBook',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.2,
-          ),
+        title: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              clipBehavior: Clip.hardEdge,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              // padding: const EdgeInsets.all(6),
+              child: Image.asset(
+                'assets/images/logo_circle.png',
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'StayBook',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
         ),
         actions: [
           if (authController.isAuthenticated) const NotificationBellAction(),
@@ -237,176 +258,11 @@ class HomeTab extends StatelessWidget {
     BuildContext context,
     CustomerHotelController c,
   ) async {
-    final localCityController = TextEditingController(
-      text: c.cityFilterController.text,
-    );
-    final localCountryController = TextEditingController(
-      text: c.countryFilterController.text,
-    );
-    String selectedSort = c.sortBy.value;
-    String selectedDirection = c.direction.value;
-
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (sheetContext, setState) {
-            final maxSheetHeight =
-                MediaQuery.of(sheetContext).size.height * 0.88;
-            return SafeArea(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: maxSheetHeight),
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    10,
-                    16,
-                    16 + MediaQuery.of(sheetContext).viewInsets.bottom,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Hotel Filters',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _sheetInput(
-                        localCityController,
-                        'City',
-                        Icons.location_city_outlined,
-                      ),
-                      const SizedBox(height: 10),
-                      _sheetInput(
-                        localCountryController,
-                        'Country',
-                        Icons.public_outlined,
-                      ),
-                      const SizedBox(height: 10),
-                      DropdownButtonFormField<String>(
-                        initialValue: selectedSort,
-                        decoration: _sheetDecoration(
-                          'Sort By',
-                          Icons.sort_rounded,
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'updatedat',
-                            child: Text('Updated'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'createdat',
-                            child: Text('Created'),
-                          ),
-                          DropdownMenuItem(value: 'name', child: Text('Name')),
-                          DropdownMenuItem(value: 'city', child: Text('City')),
-                          DropdownMenuItem(
-                            value: 'country',
-                            child: Text('Country'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value == null) return;
-                          setState(() => selectedSort = value);
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                      DropdownButtonFormField<String>(
-                        initialValue: selectedDirection,
-                        decoration: _sheetDecoration(
-                          'Direction',
-                          Icons.swap_vert_rounded,
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'asc',
-                            child: Text('Ascending'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'desc',
-                            child: Text('Descending'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value == null) return;
-                          setState(() => selectedDirection = value);
-                        },
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () {
-                                c.resetFilters();
-                                Navigator.of(sheetContext).pop();
-                                c.fetchHotels(resetPage: true);
-                              },
-                              child: const Text('Reset'),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: FilledButton(
-                              onPressed: () {
-                                c.cityFilterController.text =
-                                    localCityController.text.trim();
-                                c.countryFilterController.text =
-                                    localCountryController.text.trim();
-                                c.setSortBy(selectedSort);
-                                c.setDirection(selectedDirection);
-                                Navigator.of(sheetContext).pop();
-                                c.fetchHotels(resetPage: true);
-                              },
-                              child: const Text('Apply'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-    localCityController.dispose();
-    localCountryController.dispose();
-  }
-
-  Widget _sheetInput(
-    TextEditingController controller,
-    String label,
-    IconData icon,
-  ) {
-    return TextField(
-      controller: controller,
-      decoration: _sheetDecoration(label, icon),
-    );
-  }
-
-  InputDecoration _sheetDecoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon),
-      filled: true,
-      fillColor: const Color(0xFFF3F5FB),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF24407D), width: 1.2),
-      ),
+      builder: (_) => _HotelFilterSheet(controller: c),
     );
   }
 
@@ -440,124 +296,240 @@ class HomeTab extends StatelessWidget {
         ? ApiEndpoints.resolveUrl(hotel.photoUrls.first)
         : '';
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: () => Get.to(() => HotelDetailsScreen(hotel: hotel, user: user)),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE8ECF5)),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF111827).withValues(alpha: 0.06),
-              blurRadius: 18,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(18),
+    final primary = const Color(0xFF5B6CFF); // Luxury soft indigo
+    final gradient = const LinearGradient(
+      colors: [Color(0xFFEEF2FF), Color(0xFFF8FAFF)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        bool isPressed = false;
+
+        return GestureDetector(
+          onTapDown: (_) => setState(() => isPressed = true),
+          onTapUp: (_) => setState(() => isPressed = false),
+          onTapCancel: () => setState(() => isPressed = false),
+          onTap: () =>
+              Get.to(() => HotelDetailsScreen(hotel: hotel, user: user)),
+          child: AnimatedScale(
+            scale: isPressed ? 0.98 : 1,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                gradient: gradient,
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 30,
+                    offset: const Offset(0, 18),
+                  ),
+                ],
               ),
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: image.isNotEmpty
-                    ? Image.network(
-                        image,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            _imagePlaceholder(),
-                      )
-                    : _imagePlaceholder(),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    hotel.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
+                  /// IMAGE SECTION
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(22),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        size: 16,
-                        color: Color(0xFF667085),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          '${hotel.city}, ${hotel.country}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Color(0xFF667085)),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    hotel.description.trim().isEmpty
-                        ? 'A comfortable stay with premium amenities.'
-                        : hotel.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      height: 1.35,
-                      color: Color(0xFF2F3645),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE7EEFF),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          'Rating ${hotel.rating.toStringAsFixed(1)}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF21418C),
-                            fontWeight: FontWeight.w700,
+                    child: Stack(
+                      children: [
+                        AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: AnimatedScale(
+                            scale: isPressed ? 1.06 : 1,
+                            duration: const Duration(milliseconds: 350),
+                            child: image.isNotEmpty
+                                ? Image.network(
+                                    image,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) =>
+                                        _imagePlaceholder(),
+                                  )
+                                : _imagePlaceholder(),
                           ),
                         ),
-                      ),
-                      const Spacer(),
-                      const Text(
-                        'View details',
-                        style: TextStyle(
-                          color: Color(0xFF21418C),
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
+
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            height: 90,
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.transparent, Colors.black87],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+
+                        Positioned(
+                          top: 16,
+                          right: 16,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(999),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 7,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.25),
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.star,
+                                      size: 14,
+                                      color: Colors.amber,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      hotel.rating.toStringAsFixed(1),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          hotel.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        /// Location
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on_outlined,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                '${hotel.city}, ${hotel.country}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        /// Description
+                        Text(
+                          hotel.description.trim().isEmpty
+                              ? 'Experience comfort, elegance, and world-class hospitality.'
+                              : hotel.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            height: 1.5,
+                            fontSize: 14,
+                            color: Color(0xFF444444),
+                          ),
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        /// Bottom Row
+                        Row(
+                          children: [
+                            Text(
+                              "Starting ₹500",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: primary,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            const Text(
+                              "/ night",
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            const Spacer(),
+
+                            /// Modern Pill Button
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 250),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [primary, primary.withOpacity(0.8)],
+                                ),
+                                borderRadius: BorderRadius.circular(999),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: primary.withOpacity(0.3),
+                                    blurRadius: 15,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: const Text(
+                                "View Details",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -577,9 +549,9 @@ class HomeTab extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF3F1D89),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE8ECF5)),
+        // border: Border.all(color: const Color(0xFFE8ECF5)),
       ),
       child: Wrap(
         alignment: WrapAlignment.center,
@@ -589,24 +561,44 @@ class HomeTab extends StatelessWidget {
         children: [
           OutlinedButton.icon(
             onPressed: c.page.value > 0 ? c.goToPreviousPage : null,
-            icon: const Icon(Icons.arrow_back_rounded, size: 16),
-            label: const Text('Previous'),
+            icon: const Icon(
+              Icons.arrow_back_rounded,
+              size: 16,
+              color: Colors.white,
+            ),
+            label: const Text(
+              'Previous',
+              style: TextStyle(color: Colors.white),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Colors.white70),
+            ),
           ),
           Text(
             'Page ${c.page.value + 1} / ${c.totalPages.value}',
-            style: const TextStyle(fontWeight: FontWeight.w700),
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
           ),
           OutlinedButton.icon(
             onPressed: c.page.value < (c.totalPages.value - 1)
                 ? c.goToNextPage
                 : null,
-            icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-            label: const Text('Next'),
+            label: const Text('Next', style: TextStyle(color: Colors.white)),
+            icon: const Icon(
+              Icons.arrow_forward_rounded,
+              size: 16,
+              color: Colors.white,
+            ),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Colors.white70),
+            ),
           ),
           Text(
             'Total ${c.totalElements.value}',
             style: const TextStyle(
-              color: Color(0xFF667085),
+              color: Colors.white,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -664,6 +656,173 @@ class HomeTab extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HotelFilterSheet extends StatefulWidget {
+  const _HotelFilterSheet({required this.controller});
+
+  final CustomerHotelController controller;
+
+  @override
+  State<_HotelFilterSheet> createState() => _HotelFilterSheetState();
+}
+
+class _HotelFilterSheetState extends State<_HotelFilterSheet> {
+  late final TextEditingController _localCityController;
+  late final TextEditingController _localCountryController;
+  late String _selectedSort;
+  late String _selectedDirection;
+
+  @override
+  void initState() {
+    super.initState();
+    _localCityController = TextEditingController(
+      text: widget.controller.cityFilterController.text,
+    );
+    _localCountryController = TextEditingController(
+      text: widget.controller.countryFilterController.text,
+    );
+    _selectedSort = widget.controller.sortBy.value;
+    _selectedDirection = widget.controller.direction.value;
+  }
+
+  @override
+  void dispose() {
+    _localCityController.dispose();
+    _localCountryController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final maxSheetHeight = MediaQuery.of(context).size.height * 0.88;
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxSheetHeight),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            10,
+            16,
+            16 + MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Hotel Filters',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 12),
+              _sheetInput(
+                _localCityController,
+                'City',
+                Icons.location_city_outlined,
+              ),
+              const SizedBox(height: 10),
+              _sheetInput(
+                _localCountryController,
+                'Country',
+                Icons.public_outlined,
+              ),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                initialValue: _selectedSort,
+                decoration: _sheetDecoration('Sort By', Icons.sort_rounded),
+                items: const [
+                  DropdownMenuItem(value: 'updatedat', child: Text('Updated')),
+                  DropdownMenuItem(value: 'createdat', child: Text('Created')),
+                  DropdownMenuItem(value: 'name', child: Text('Name')),
+                  DropdownMenuItem(value: 'city', child: Text('City')),
+                  DropdownMenuItem(value: 'country', child: Text('Country')),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _selectedSort = value);
+                },
+              ),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                initialValue: _selectedDirection,
+                decoration: _sheetDecoration(
+                  'Direction',
+                  Icons.swap_vert_rounded,
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'asc', child: Text('Ascending')),
+                  DropdownMenuItem(value: 'desc', child: Text('Descending')),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _selectedDirection = value);
+                },
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        widget.controller.resetFilters();
+                        Navigator.of(context).pop();
+                        widget.controller.fetchHotels(resetPage: true);
+                      },
+                      child: const Text('Reset'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () {
+                        widget.controller.cityFilterController.text =
+                            _localCityController.text.trim();
+                        widget.controller.countryFilterController.text =
+                            _localCountryController.text.trim();
+                        widget.controller.setSortBy(_selectedSort);
+                        widget.controller.setDirection(_selectedDirection);
+                        Navigator.of(context).pop();
+                        widget.controller.fetchHotels(resetPage: true);
+                      },
+                      child: const Text('Apply'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sheetInput(
+    TextEditingController controller,
+    String label,
+    IconData icon,
+  ) {
+    return TextField(
+      controller: controller,
+      decoration: _sheetDecoration(label, icon),
+    );
+  }
+
+  InputDecoration _sheetDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      filled: true,
+      fillColor: const Color(0xFFF3F5FB),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF24407D), width: 1.2),
       ),
     );
   }

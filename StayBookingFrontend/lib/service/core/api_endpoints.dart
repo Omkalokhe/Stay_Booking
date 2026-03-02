@@ -2,7 +2,7 @@ class ApiEndpoints {
   static const String _baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     // defaultValue: 'http://localhost:8080',
-    defaultValue: "http://192.168.1.7:8080",
+    defaultValue: "http://192.168.1.9:8080",
   );
 
   static Uri login() => Uri.parse('$_baseUrl/api/auth/login');

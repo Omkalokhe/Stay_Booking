@@ -10,11 +10,7 @@ import 'package:stay_booking_frontend/service/room/room_service.dart';
 import 'package:stay_booking_frontend/view/vendor/room_view_screen.dart';
 
 class HotelDetailsScreen extends StatefulWidget {
-  const HotelDetailsScreen({
-    required this.hotel,
-    this.user,
-    super.key,
-  });
+  const HotelDetailsScreen({required this.hotel, this.user, super.key});
 
   final HotelResponseDto hotel;
   final Map<String, dynamic>? user;
@@ -65,7 +61,9 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     }
   }
 
-  Future<List<RoomResponseDto>> _loadRoomsForHotel(HotelResponseDto hotel) async {
+  Future<List<RoomResponseDto>> _loadRoomsForHotel(
+    HotelResponseDto hotel,
+  ) async {
     final collected = <RoomResponseDto>[];
     var currentPage = 0;
     var totalPages = 1;
@@ -96,8 +94,15 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFF3F1D89),
       appBar: AppBar(
-        title: const Text('Hotel Details'),
+        backgroundColor: Color(0xFF3F1D89),
+        foregroundColor: Colors.white,
+        title: const Text(
+          'Hotel Details',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+        centerTitle: true,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -117,8 +122,9 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                   Text(
                     'Rooms (${_rooms.length})',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   if (_rooms.isEmpty)
@@ -140,7 +146,11 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
           borderRadius: BorderRadius.circular(14),
         ),
         alignment: Alignment.center,
-        child: const Icon(Icons.hotel_rounded, size: 60, color: Color(0xFF5A31D6)),
+        child: const Icon(
+          Icons.hotel_rounded,
+          size: 60,
+          color: Color(0xFF5A31D6),
+        ),
       );
     }
 
@@ -202,7 +212,10 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
               Expanded(
                 child: Text(
                   hotel.name,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               Tooltip(
@@ -223,7 +236,9 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
           Text('Rating: ${hotel.rating.toStringAsFixed(1)}'),
           const SizedBox(height: 8),
           Text(
-            hotel.description.isEmpty ? 'No description available.' : hotel.description,
+            hotel.description.isEmpty
+                ? 'No description available.'
+                : hotel.description,
           ),
         ],
       ),
@@ -251,7 +266,9 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   }
 
   Widget _roomCard(RoomResponseDto room) {
-    final photo = room.photos.isNotEmpty ? RoomService.roomPhotoUrl(room.photos.first) : '';
+    final photo = room.photos.isNotEmpty
+        ? RoomService.roomPhotoUrl(room.photos.first)
+        : '';
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () async {
@@ -288,7 +305,10 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                   Expanded(
                     child: Text(
                       room.roomType,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   _statusChip(room.available),
@@ -296,7 +316,9 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                room.description.isEmpty ? 'No description added.' : room.description,
+                room.description.isEmpty
+                    ? 'No description added.'
+                    : room.description,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
