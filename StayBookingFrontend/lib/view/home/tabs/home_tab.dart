@@ -10,18 +10,25 @@ import 'package:stay_booking_frontend/service/core/api_endpoints.dart';
 import 'package:stay_booking_frontend/view/vendor/hotel_details_screen.dart';
 import 'package:stay_booking_frontend/view/widgets/notification_bell_action.dart';
 
-class HomeTab extends StatelessWidget {
+class HomeTab extends StatefulWidget {
   const HomeTab({required this.user, super.key});
 
   final Map<String, dynamic> user;
   static const String _tag = 'customer-hotels';
 
   @override
+  State<HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<HomeTab> {
+  bool isPressed = false;
+  @override
   Widget build(BuildContext context) {
     final authController = Get.find<AuthController>();
-    final hotelController = Get.isRegistered<CustomerHotelController>(tag: _tag)
-        ? Get.find<CustomerHotelController>(tag: _tag)
-        : Get.put(CustomerHotelController(), tag: _tag);
+    final hotelController =
+        Get.isRegistered<CustomerHotelController>(tag: HomeTab._tag)
+        ? Get.find<CustomerHotelController>(tag: HomeTab._tag)
+        : Get.put(CustomerHotelController(), tag: HomeTab._tag);
 
     return Scaffold(
       backgroundColor: Color(0xFF3F1D89),
@@ -305,14 +312,12 @@ class HomeTab extends StatelessWidget {
 
     return StatefulBuilder(
       builder: (context, setState) {
-        bool isPressed = false;
-
         return GestureDetector(
           onTapDown: (_) => setState(() => isPressed = true),
           onTapUp: (_) => setState(() => isPressed = false),
           onTapCancel: () => setState(() => isPressed = false),
           onTap: () =>
-              Get.to(() => HotelDetailsScreen(hotel: hotel, user: user)),
+              Get.to(() => HotelDetailsScreen(hotel: hotel, user: widget.user)),
           child: AnimatedScale(
             scale: isPressed ? 0.98 : 1,
             duration: const Duration(milliseconds: 200),

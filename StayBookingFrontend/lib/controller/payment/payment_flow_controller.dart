@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:stay_booking_frontend/controller/auth_controller.dart';
 import 'package:stay_booking_frontend/model/payment_models.dart';
+import 'package:stay_booking_frontend/service/core/api_endpoints.dart';
 import 'package:stay_booking_frontend/service/payment/payment_api_client.dart';
 import 'package:stay_booking_frontend/service/payment/razorpay_payment_service.dart';
 
@@ -17,10 +18,7 @@ class PaymentFlowController extends GetxController {
            RazorpayPaymentService(
              apiClient: apiClient ??
                  PaymentApiClient(
-                   baseUrl: const String.fromEnvironment(
-                     'API_BASE_URL',
-                     defaultValue: 'http://192.168.1.7:8080',
-                   ),
+                   baseUrl: ApiEndpoints.baseUrl,
                    accessTokenProvider: () async =>
                        Get.find<AuthController>().session.value?.accessToken,
                  ),

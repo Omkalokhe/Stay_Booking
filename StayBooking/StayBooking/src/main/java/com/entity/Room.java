@@ -2,6 +2,7 @@ package com.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -36,6 +37,7 @@ public class Room {
     @Column(length = 2000)
     private String description;
 
+    @Min(value = 0, message = "Price must be Greater than 0")
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
