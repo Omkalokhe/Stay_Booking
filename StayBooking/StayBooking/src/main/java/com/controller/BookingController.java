@@ -6,6 +6,7 @@ import com.dto.UpdateBookingStatusRequestDto;
 import com.enums.BookingStatus;
 import com.enums.PaymentStatus;
 import com.service.BookingService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,7 +24,7 @@ public class BookingController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createBooking(@RequestBody CreateBookingRequestDto requestDto) {
+    public ResponseEntity<?> createBooking(@Valid @RequestBody CreateBookingRequestDto requestDto) {
         return bookingService.createBooking(requestDto);
     }
 
@@ -52,12 +53,12 @@ public class BookingController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateBooking(@PathVariable int id, @RequestBody UpdateBookingRequestDto requestDto) {
+    public ResponseEntity<?> updateBooking(@PathVariable int id, @Valid @RequestBody UpdateBookingRequestDto requestDto) {
         return bookingService.updateBooking(id, requestDto);
     }
 
     @PutMapping("/{id}/status")
-    public ResponseEntity<?> updateBookingStatus(@PathVariable int id, @RequestBody UpdateBookingStatusRequestDto requestDto) {
+    public ResponseEntity<?> updateBookingStatus(@PathVariable int id, @Valid @RequestBody UpdateBookingStatusRequestDto requestDto) {
         return bookingService.updateBookingStatus(id, requestDto);
     }
 

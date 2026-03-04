@@ -2,6 +2,7 @@ package com.serviceImpl;
 
 import com.dto.UpdateUserRequestDto;
 import com.dto.UserDto;
+import com.exception.ResourceNotFoundException;
 import com.entity.User;
 import com.enums.Role;
 import com.enums.UserStatus;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -33,11 +35,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseEntity<?> registerUser(User user) {
         if (user == null || isBlank(user.getEmail()) || isBlank(user.getPassword())) {
-            return ResponseEntity.badRequest().body("Email and password are required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email and password are required");
         }
 
         if (userRepository.findByEmailIgnoreCase(user.getEmail().trim()) != null) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("User already exists with this email");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists with this email");
         }
 
         user.setEmail(user.getEmail().trim().toLowerCase());
@@ -65,7 +67,7 @@ public class UserServiceImpl implements UserService {
         if (optionalUser.isPresent()) {
             return ResponseEntity.ok(toUserDto(optionalUser.get()));
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with id: " + id);
+        throw new ResourceNotFoundException("User not found with id: " + id);
     }
 
     @Override
@@ -78,25 +80,25 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseEntity<?> getUserByEmail(String email) {
         if (isBlank(email)) {
-            return ResponseEntity.badRequest().body("Email is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is required");
         }
 
         User user = userRepository.findByEmailIgnoreCase(email.trim());
         if (user != null) {
             return ResponseEntity.ok(toUserDto(user));
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with email: " + email);
+        throw new ResourceNotFoundException("User not found with email: " + email);
     }
 
     @Override
     public ResponseEntity<?> updateUser(int id, UpdateUserRequestDto updateUserRequestDto) {
         if (updateUserRequestDto == null) {
-            return ResponseEntity.badRequest().body("Request body is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
         }
 
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with id: " + id);
+            throw new ResourceNotFoundException("User not found with id: " + id);
         }
 
         User existingUser = optionalUser.get();
@@ -106,7 +108,7 @@ public class UserServiceImpl implements UserService {
             normalizedEmail = updateUserRequestDto.getEmail().trim().toLowerCase();
             User sameEmailUser = userRepository.findByEmailIgnoreCase(normalizedEmail);
             if (sameEmailUser != null && sameEmailUser.getId() != existingUser.getId()) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already in use by another user");
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use by another user");
             }
         }
 
@@ -161,7 +163,7 @@ public class UserServiceImpl implements UserService {
     public ResponseEntity<?> deleteUser(int id) {
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with id: " + id);
+            throw new ResourceNotFoundException("User not found with id: " + id);
         }
 
         User user = optionalUser.get();
@@ -203,3 +205,4 @@ public class UserServiceImpl implements UserService {
         return OffsetDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     }
 }
+

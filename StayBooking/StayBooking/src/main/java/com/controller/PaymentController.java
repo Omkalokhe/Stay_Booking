@@ -3,6 +3,7 @@ package com.controller;
 import com.dto.CreateRazorpayOrderRequestDto;
 import com.dto.VerifyRazorpayPaymentRequestDto;
 import com.service.PaymentService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,12 +19,12 @@ public class PaymentController {
     }
 
     @PostMapping("/orders")
-    public ResponseEntity<?> createOrder(@RequestBody CreateRazorpayOrderRequestDto requestDto) {
+    public ResponseEntity<?> createOrder(@Valid @RequestBody CreateRazorpayOrderRequestDto requestDto) {
         return paymentService.createRazorpayOrder(requestDto);
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<?> verifyPayment(@RequestBody VerifyRazorpayPaymentRequestDto requestDto) {
+    public ResponseEntity<?> verifyPayment(@Valid @RequestBody VerifyRazorpayPaymentRequestDto requestDto) {
         return paymentService.verifyRazorpayPayment(requestDto);
     }
 

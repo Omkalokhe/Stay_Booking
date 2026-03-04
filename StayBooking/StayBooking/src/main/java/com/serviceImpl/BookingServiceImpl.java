@@ -5,6 +5,7 @@ import com.dto.CreateBookingRequestDto;
 import com.dto.PageResponseDto;
 import com.dto.UpdateBookingRequestDto;
 import com.dto.UpdateBookingStatusRequestDto;
+import com.exception.ResourceNotFoundException;
 import com.entity.Booking;
 import com.entity.Hotel;
 import com.entity.Room;
@@ -26,6 +27,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -59,33 +61,33 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     public ResponseEntity<?> createBooking(CreateBookingRequestDto requestDto) {
         if (requestDto == null) {
-            return ResponseEntity.badRequest().body("Request body is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
         }
         if (requestDto.getUserId() == null || requestDto.getHotelId() == null || requestDto.getRoomId() == null) {
-            return ResponseEntity.badRequest().body("userId, hotelId and roomId are required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId, hotelId and roomId are required");
         }
         if (requestDto.getNumberOfGuests() == null || requestDto.getNumberOfGuests() <= 0) {
-            return ResponseEntity.badRequest().body("numberOfGuests must be greater than 0");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "numberOfGuests must be greater than 0");
         }
 
         LocalDate checkInDate = requestDto.getCheckInDate();
         LocalDate checkOutDate = requestDto.getCheckOutDate();
         String dateValidationError = validateDates(checkInDate, checkOutDate);
         if (dateValidationError != null) {
-            return ResponseEntity.badRequest().body(dateValidationError);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, dateValidationError);
         }
 
         Optional<User> optionalUser = userRepository.findById(requestDto.getUserId());
         if (optionalUser.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with id: " + requestDto.getUserId());
+            throw new ResourceNotFoundException("User not found with id: " + requestDto.getUserId());
         }
         Optional<Hotel> optionalHotel = hotelRepository.findById(requestDto.getHotelId());
         if (optionalHotel.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Hotel not found with id: " + requestDto.getHotelId());
+            throw new ResourceNotFoundException("Hotel not found with id: " + requestDto.getHotelId());
         }
         Optional<Room> optionalRoom = roomRepository.findById(requestDto.getRoomId());
         if (optionalRoom.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Room not found with id: " + requestDto.getRoomId());
+            throw new ResourceNotFoundException("Room not found with id: " + requestDto.getRoomId());
         }
 
         User user = optionalUser.get();
@@ -93,10 +95,10 @@ public class BookingServiceImpl implements BookingService {
         Room room = optionalRoom.get();
 
         if (room.getHotel().getId() != hotel.getId()) {
-            return ResponseEntity.badRequest().body("Room does not belong to the provided hotel");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Room does not belong to the provided hotel");
         }
         if (!room.isAvailable()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Room is marked unavailable");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Room is marked unavailable");
         }
 
         if (bookingRepository.existsOverlappingBooking(
@@ -105,8 +107,7 @@ public class BookingServiceImpl implements BookingService {
                 checkOutDate,
                 activeBlockingStatuses()
         )) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Room is already booked for the selected date range");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Room is already booked for the selected date range");
         }
 
         long nights = ChronoUnit.DAYS.between(checkInDate, checkOutDate);
@@ -132,7 +133,7 @@ public class BookingServiceImpl implements BookingService {
     public ResponseEntity<?> getBookingById(int id) {
         Optional<Booking> optionalBooking = bookingRepository.findById(id);
         if (optionalBooking.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Booking not found with id: " + id);
+            throw new ResourceNotFoundException("Booking not found with id: " + id);
         }
         return ResponseEntity.ok(toResponse(optionalBooking.get()));
     }
@@ -163,28 +164,28 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     public ResponseEntity<?> updateBooking(int id, UpdateBookingRequestDto requestDto) {
         if (requestDto == null) {
-            return ResponseEntity.badRequest().body("Request body is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
         }
 
         Optional<Booking> optionalBooking = bookingRepository.findById(id);
         if (optionalBooking.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Booking not found with id: " + id);
+            throw new ResourceNotFoundException("Booking not found with id: " + id);
         }
 
         Booking booking = optionalBooking.get();
         if (isTerminalStatus(booking.getBookingStatus())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Cannot update a cancelled/completed/no-show booking");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot update a cancelled/completed/no-show booking");
         }
 
         LocalDate nextCheckIn = requestDto.getCheckInDate() != null ? requestDto.getCheckInDate() : booking.getCheckInDate();
         LocalDate nextCheckOut = requestDto.getCheckOutDate() != null ? requestDto.getCheckOutDate() : booking.getCheckOutDate();
         String dateValidationError = validateDates(nextCheckIn, nextCheckOut);
         if (dateValidationError != null) {
-            return ResponseEntity.badRequest().body(dateValidationError);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, dateValidationError);
         }
 
         if (requestDto.getNumberOfGuests() != null && requestDto.getNumberOfGuests() <= 0) {
-            return ResponseEntity.badRequest().body("numberOfGuests must be greater than 0");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "numberOfGuests must be greater than 0");
         }
 
         if (bookingRepository.existsOverlappingBookingExcludingCurrent(
@@ -194,8 +195,7 @@ public class BookingServiceImpl implements BookingService {
                 nextCheckOut,
                 activeBlockingStatuses()
         )) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Room is already booked for the selected date range");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Room is already booked for the selected date range");
         }
 
         booking.setCheckInDate(nextCheckIn);
@@ -216,15 +216,15 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     public ResponseEntity<?> updateBookingStatus(int id, UpdateBookingStatusRequestDto requestDto) {
         if (requestDto == null) {
-            return ResponseEntity.badRequest().body("Request body is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
         }
         if (requestDto.getBookingStatus() == null && requestDto.getPaymentStatus() == null) {
-            return ResponseEntity.badRequest().body("At least one of bookingStatus or paymentStatus is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one of bookingStatus or paymentStatus is required");
         }
 
         Optional<Booking> optionalBooking = bookingRepository.findById(id);
         if (optionalBooking.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Booking not found with id: " + id);
+            throw new ResourceNotFoundException("Booking not found with id: " + id);
         }
 
         Booking booking = optionalBooking.get();
@@ -242,7 +242,8 @@ public class BookingServiceImpl implements BookingService {
         if (requestDto.getBookingStatus() != null) {
             BookingStatus nextStatus = requestDto.getBookingStatus();
             if (!isValidStatusTransition(booking.getBookingStatus(), nextStatus)) {
-                return ResponseEntity.badRequest().body(
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
                         "Invalid booking status transition: " + booking.getBookingStatus() + " -> " + nextStatus
                 );
             }
@@ -260,7 +261,7 @@ public class BookingServiceImpl implements BookingService {
     public ResponseEntity<?> cancelBooking(int id) {
         Optional<Booking> optionalBooking = bookingRepository.findById(id);
         if (optionalBooking.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Booking not found with id: " + id);
+            throw new ResourceNotFoundException("Booking not found with id: " + id);
         }
 
         Booking booking = optionalBooking.get();
@@ -268,7 +269,7 @@ public class BookingServiceImpl implements BookingService {
             return ResponseEntity.ok("Booking is already cancelled");
         }
         if (booking.getBookingStatus() == BookingStatus.COMPLETED || booking.getBookingStatus() == BookingStatus.NO_SHOW) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Cannot cancel a completed/no-show booking");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot cancel a completed/no-show booking");
         }
 
         booking.setBookingStatus(BookingStatus.CANCELLED);
@@ -385,3 +386,4 @@ public class BookingServiceImpl implements BookingService {
     }
 
 }
+

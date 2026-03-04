@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -58,7 +59,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Transactional
     public ResponseEntity<?> requestPasswordResetOtp(ForgotPasswordRequestDto forgotPasswordRequestDto) {
         if (forgotPasswordRequestDto == null || isBlank(forgotPasswordRequestDto.getEmail())) {
-            return ResponseEntity.badRequest().body("Email is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is required");
         }
 
         String email = forgotPasswordRequestDto.getEmail().trim().toLowerCase();
@@ -91,8 +92,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         } catch (RuntimeException ex) {
             passwordResetOtpRepository.delete(savedOtp);
             LOGGER.error("Failed to deliver password reset OTP email for {}", email, ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Unable to send OTP right now. Please try again.");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to send OTP right now. Please try again.", ex);
         }
 
         return ResponseEntity.ok("If this email exists, a password reset OTP has been sent");
@@ -106,28 +106,28 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                 || isBlank(resetPasswordRequestDto.getOtp())
                 || isBlank(resetPasswordRequestDto.getNewPassword())
                 || isBlank(resetPasswordRequestDto.getConfirmPassword())) {
-            return ResponseEntity.badRequest().body("Email, otp, newPassword and confirmPassword are required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email, otp, newPassword and confirmPassword are required");
         }
 
         if (!resetPasswordRequestDto.getNewPassword().equals(resetPasswordRequestDto.getConfirmPassword())) {
-            return ResponseEntity.badRequest().body("newPassword and confirmPassword do not match");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "newPassword and confirmPassword do not match");
         }
 
         if (resetPasswordRequestDto.getNewPassword().length() < MIN_PASSWORD_LENGTH) {
-            return ResponseEntity.badRequest().body("Password must be at least " + MIN_PASSWORD_LENGTH + " characters");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must be at least " + MIN_PASSWORD_LENGTH + " characters");
         }
 
         String email = resetPasswordRequestDto.getEmail().trim().toLowerCase();
         User user = userRepository.findByEmailIgnoreCase(email);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid OTP or email");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid OTP or email");
         }
 
         LocalDateTime now = LocalDateTime.now();
         Optional<PasswordResetOtp> optionalOtp = passwordResetOtpRepository
                 .findTopByUserAndUsedFalseAndExpiresAtAfterOrderByCreatedAtDesc(user, now);
         if (optionalOtp.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired OTP");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired OTP");
         }
 
         PasswordResetOtp resetOtp = optionalOtp.get();
@@ -135,7 +135,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             resetOtp.setUsed(true);
             resetOtp.setUsedAt(now);
             passwordResetOtpRepository.save(resetOtp);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired OTP");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired OTP");
         }
 
         String inputOtpHash = hashOtp(resetPasswordRequestDto.getOtp().trim());
@@ -147,10 +147,12 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                 resetOtp.setUsedAt(now);
             }
             passwordResetOtpRepository.save(resetOtp);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(failedAttempts >= maxOtpAttempts
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    failedAttempts >= maxOtpAttempts
                             ? "OTP is invalid and has been locked. Request a new OTP."
-                            : "Invalid OTP");
+                            : "Invalid OTP"
+            );
         }
 
         user.setPassword(passwordEncoder.encode(resetPasswordRequestDto.getNewPassword()));

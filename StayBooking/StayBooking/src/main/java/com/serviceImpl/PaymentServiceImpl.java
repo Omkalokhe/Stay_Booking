@@ -5,6 +5,7 @@ import com.dto.CreateRazorpayOrderRequestDto;
 import com.dto.CreateRazorpayOrderResponseDto;
 import com.dto.VerifyRazorpayPaymentRequestDto;
 import com.dto.VerifyRazorpayPaymentResponseDto;
+import com.exception.ResourceNotFoundException;
 import com.entity.Booking;
 import com.entity.PaymentTransaction;
 import com.enums.BookingStatus;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -58,27 +60,23 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public ResponseEntity<?> createRazorpayOrder(CreateRazorpayOrderRequestDto requestDto) {
         if (requestDto == null || requestDto.getBookingId() == null) {
-            return ResponseEntity.badRequest().body("bookingId is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "bookingId is required");
         }
         if (isBlank(razorpayProperties.getKeyId()) || isBlank(razorpayProperties.getKeySecret())) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Razorpay keys are not configured on server");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Razorpay keys are not configured on server");
         }
 
         Optional<Booking> optionalBooking = bookingRepository.findById(requestDto.getBookingId());
         if (optionalBooking.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Booking not found with id: " + requestDto.getBookingId());
+            throw new ResourceNotFoundException("Booking not found with id: " + requestDto.getBookingId());
         }
 
         Booking booking = optionalBooking.get();
         if (isTerminalBooking(booking.getBookingStatus())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Cannot create payment order for booking status: " + booking.getBookingStatus());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot create payment order for booking status: " + booking.getBookingStatus());
         }
         if (booking.getPaymentStatus() == PaymentStatus.SUCCESS) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Payment is already completed for this booking");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Payment is already completed for this booking");
         }
 
         long amountInPaise = toPaise(booking.getTotalAmount());
@@ -105,16 +103,13 @@ public class PaymentServiceImpl implements PaymentService {
             orderResponse = razorpayResponse.getBody();
         } catch (HttpStatusCodeException ex) {
             String providerError = ex.getResponseBodyAsString();
-            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                    .body("Failed to create Razorpay order: " + providerError);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to create Razorpay order: " + providerError, ex);
         } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                    .body("Failed to create Razorpay order: " + ex.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to create Razorpay order: " + ex.getMessage(), ex);
         }
 
         if (orderResponse == null || orderResponse.get("id") == null) {
-            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                    .body("Razorpay order creation returned invalid response");
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Razorpay order creation returned invalid response");
         }
 
         String razorpayOrderId = String.valueOf(orderResponse.get("id"));
@@ -152,31 +147,27 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public ResponseEntity<?> verifyRazorpayPayment(VerifyRazorpayPaymentRequestDto requestDto) {
         if (requestDto == null) {
-            return ResponseEntity.badRequest().body("Request body is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
         }
         if (requestDto.getBookingId() == null
                 || isBlank(requestDto.getRazorpayOrderId())
                 || isBlank(requestDto.getRazorpayPaymentId())
                 || isBlank(requestDto.getRazorpaySignature())) {
-            return ResponseEntity.badRequest()
-                    .body("bookingId, razorpayOrderId, razorpayPaymentId and razorpaySignature are required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "bookingId, razorpayOrderId, razorpayPaymentId and razorpaySignature are required");
         }
         if (isBlank(razorpayProperties.getKeySecret())) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Razorpay key secret is not configured on server");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Razorpay key secret is not configured on server");
         }
 
         Optional<Booking> optionalBooking = bookingRepository.findById(requestDto.getBookingId());
         if (optionalBooking.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Booking not found with id: " + requestDto.getBookingId());
+            throw new ResourceNotFoundException("Booking not found with id: " + requestDto.getBookingId());
         }
         Booking booking = optionalBooking.get();
 
         Optional<PaymentTransaction> optionalTx = paymentTransactionRepository.findByProviderOrderId(requestDto.getRazorpayOrderId());
         if (optionalTx.isEmpty() || optionalTx.get().getBooking().getId() != booking.getId()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("No payment order found for this booking and razorpayOrderId");
+            throw new ResourceNotFoundException("No payment order found for this booking and razorpayOrderId");
         }
 
         PaymentTransaction tx = optionalTx.get();
@@ -210,8 +201,7 @@ public class PaymentServiceImpl implements PaymentService {
             bookingRepository.save(booking);
             notificationService.sendBookingStateChangeNotifications(booking, previousBookingStatus, previousPaymentStatus);
 
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Invalid payment signature. Payment verification failed.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid payment signature. Payment verification failed.");
         }
 
         tx.setPaymentStatus(PaymentStatus.SUCCESS);
@@ -243,13 +233,12 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional(readOnly = true)
     public ResponseEntity<?> getRazorpayPaymentStatus(Integer bookingId) {
         if (bookingId == null) {
-            return ResponseEntity.badRequest().body("bookingId is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "bookingId is required");
         }
 
         Optional<Booking> optionalBooking = bookingRepository.findById(bookingId);
         if (optionalBooking.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Booking not found with id: " + bookingId);
+            throw new ResourceNotFoundException("Booking not found with id: " + bookingId);
         }
 
         Booking booking = optionalBooking.get();
@@ -352,3 +341,4 @@ public class PaymentServiceImpl implements PaymentService {
         return value == null || value.trim().isEmpty();
     }
 }
+

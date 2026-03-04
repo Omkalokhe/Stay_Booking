@@ -2,6 +2,7 @@ package com.controller;
 
 import com.dto.LoginRequestDto;
 import com.service.LoginService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,7 @@ public class LoginController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDto loginRequestDto) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
         return loginService.login(loginRequestDto);
     }
 }

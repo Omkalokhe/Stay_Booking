@@ -4,6 +4,7 @@ import com.dto.CreateHotelRequestDto;
 import com.dto.HotelResponseDto;
 import com.dto.PageResponseDto;
 import com.dto.UpdateHotelRequestDto;
+import com.exception.ResourceNotFoundException;
 import com.entity.Hotel;
 import com.repository.HotelRepository;
 import com.service.HotelPhotoStorageService;
@@ -18,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
@@ -39,13 +41,13 @@ public class HotelServiceImpl implements HotelService {
     @Transactional
     public ResponseEntity<?> createHotel(CreateHotelRequestDto requestDto) {
         if (requestDto == null) {
-            return ResponseEntity.badRequest().body("Request body is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
         }
         if (isBlank(requestDto.getName()) || isBlank(requestDto.getCity()) || isBlank(requestDto.getCountry())) {
-            return ResponseEntity.badRequest().body("name, city and country are required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "name, city and country are required");
         }
         if (requestDto.getRating() != null && !isValidRating(requestDto.getRating().doubleValue())) {
-            return ResponseEntity.badRequest().body("rating must be between 0 and 5");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "rating must be between 0 and 5");
         }
 
         Hotel hotel = new Hotel();
@@ -65,9 +67,9 @@ public class HotelServiceImpl implements HotelService {
             savedPhotos = hotelPhotoStorageService.saveHotelPhotos(requestDto.getPhotos());
             hotel.setPhotoPaths(new ArrayList<>(savedPhotos));
         } catch (IllegalArgumentException exception) {
-            return ResponseEntity.badRequest().body(exception.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
         } catch (IllegalStateException exception) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save hotel photos");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save hotel photos");
         }
 
         try {
@@ -75,7 +77,7 @@ public class HotelServiceImpl implements HotelService {
             return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(saved));
         } catch (RuntimeException exception) {
             hotelPhotoStorageService.deleteHotelPhotos(savedPhotos);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to create hotel");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create hotel", exception);
         }
     }
 
@@ -83,7 +85,7 @@ public class HotelServiceImpl implements HotelService {
     public ResponseEntity<?> getHotelById(int id) {
         Optional<Hotel> optionalHotel = hotelRepository.findById(id);
         if (optionalHotel.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Hotel not found with id: " + id);
+            throw new ResourceNotFoundException("Hotel not found with id: " + id);
         }
         return ResponseEntity.ok(toResponse(optionalHotel.get()));
     }
@@ -122,12 +124,12 @@ public class HotelServiceImpl implements HotelService {
     @Transactional
     public ResponseEntity<?> updateHotel(int id, UpdateHotelRequestDto requestDto) {
         if (requestDto == null) {
-            return ResponseEntity.badRequest().body("Request body is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
         }
 
         Optional<Hotel> optionalHotel = hotelRepository.findById(id);
         if (optionalHotel.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Hotel not found with id: " + id);
+            throw new ResourceNotFoundException("Hotel not found with id: " + id);
         }
 
         Hotel hotel = optionalHotel.get();
@@ -154,7 +156,7 @@ public class HotelServiceImpl implements HotelService {
         }
         if (requestDto.getRating() != null) {
             if (!isValidRating(requestDto.getRating().doubleValue())) {
-                return ResponseEntity.badRequest().body("rating must be between 0 and 5");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "rating must be between 0 and 5");
             }
             hotel.setRating(requestDto.getRating());
         }
@@ -183,9 +185,9 @@ public class HotelServiceImpl implements HotelService {
                 hotel.setPhotoPaths(allPhotos);
             }
         } catch (IllegalArgumentException exception) {
-            return ResponseEntity.badRequest().body(exception.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
         } catch (IllegalStateException exception) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save hotel photos");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save hotel photos");
         }
 
         try {
@@ -196,7 +198,7 @@ public class HotelServiceImpl implements HotelService {
             return ResponseEntity.ok(toResponse(updated));
         } catch (RuntimeException exception) {
             hotelPhotoStorageService.deleteHotelPhotos(newlySavedPhotos);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update hotel");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update hotel", exception);
         }
     }
 
@@ -205,7 +207,7 @@ public class HotelServiceImpl implements HotelService {
     public ResponseEntity<?> deleteHotel(int id, String deletedBy) {
         Optional<Hotel> optionalHotel = hotelRepository.findById(id);
         if (optionalHotel.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Hotel not found with id: " + id);
+            throw new ResourceNotFoundException("Hotel not found with id: " + id);
         }
 
         Hotel hotel = optionalHotel.get();
@@ -221,7 +223,7 @@ public class HotelServiceImpl implements HotelService {
             hotelPhotoStorageService.deleteHotelPhotos(photoNames);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException exception) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete hotel");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete hotel", exception);
         }
     }
 
@@ -232,7 +234,7 @@ public class HotelServiceImpl implements HotelService {
             MediaType mediaType = resolveMediaType(filename);
             return ResponseEntity.ok().contentType(mediaType).body(resource);
         } catch (IllegalArgumentException exception) {
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("Hotel photo not found");
         }
     }
 
@@ -303,3 +305,4 @@ public class HotelServiceImpl implements HotelService {
         return rating >= 0.0 && rating <= 5.0;
     }
 }
+

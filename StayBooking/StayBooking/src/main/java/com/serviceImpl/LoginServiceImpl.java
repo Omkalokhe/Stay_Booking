@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class LoginServiceImpl implements LoginService {
@@ -33,20 +34,20 @@ public class LoginServiceImpl implements LoginService {
                 || isBlank(loginRequestDto.getEmail())
                 || isBlank(loginRequestDto.getPassword())
                 || loginRequestDto.getRole() == null) {
-            return ResponseEntity.badRequest().body("Email, password and role are required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email, password and role are required");
         }
 
         User user = userRepository.findByEmailIgnoreCase(loginRequestDto.getEmail().trim());
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
         }
 
         if (user.getStatus() != UserStatus.ACTIVE) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Account is not active");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Account is not active");
         }
 
         if (user.getRole() != loginRequestDto.getRole()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid role for this account");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid role for this account");
         }
 
         boolean validPassword = passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword());
@@ -59,7 +60,7 @@ public class LoginServiceImpl implements LoginService {
         }
 
         if (!validPassword) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
         }
 
         UserDto userDto = new UserDto();

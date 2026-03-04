@@ -4,6 +4,7 @@ import com.dto.CreateRoomRequestDto;
 import com.dto.PageResponseDto;
 import com.dto.RoomResponseDto;
 import com.dto.UpdateRoomRequestDto;
+import com.exception.ResourceNotFoundException;
 import com.entity.Hotel;
 import com.entity.Room;
 import com.repository.HotelRepository;
@@ -21,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
@@ -49,25 +51,25 @@ public class RoomServiceImpl implements RoomService {
     @Transactional
     public ResponseEntity<?> createRoom(CreateRoomRequestDto requestDto) {
         if (requestDto == null) {
-            return ResponseEntity.badRequest().body("Request body is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
         }
         if (requestDto.getHotelId() == null && isBlank(requestDto.getHotelName())) {
-            return ResponseEntity.badRequest().body("Either hotelId or hotelName is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Either hotelId or hotelName is required");
         }
         if (isBlank(requestDto.getRoomType())) {
-            return ResponseEntity.badRequest().body("roomType is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roomType is required");
         }
         if (!isValidPrice(requestDto.getPrice())) {
-            return ResponseEntity.badRequest().body("price must be greater than 0");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "price must be greater than 0");
         }
 
         Hotel resolvedHotel;
         try {
             resolvedHotel = resolveHotel(requestDto.getHotelId(), requestDto.getHotelName());
         } catch (IllegalArgumentException exception) {
-            return ResponseEntity.badRequest().body(exception.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
         } catch (IllegalStateException exception) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getMessage());
+            throw new ResourceNotFoundException(exception.getMessage());
         }
 
         Room room = new Room();
@@ -83,9 +85,9 @@ public class RoomServiceImpl implements RoomService {
             List<String> savedPhotos = roomPhotoStorageService.saveRoomPhotos(requestDto.getPhotos());
             room.setPhotoPaths(new ArrayList<>(savedPhotos));
         } catch (IllegalArgumentException exception) {
-            return ResponseEntity.badRequest().body(exception.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
         } catch (IllegalStateException exception) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save room photos");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save room photos");
         }
 
         Room saved = roomRepository.save(room);
@@ -96,7 +98,7 @@ public class RoomServiceImpl implements RoomService {
     public ResponseEntity<?> getRoomById(int id) {
         Optional<Room> optionalRoom = roomRepository.findById(id);
         if (optionalRoom.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Room not found with id: " + id);
+            throw new ResourceNotFoundException("Room not found with id: " + id);
         }
         return ResponseEntity.ok(toResponse(optionalRoom.get()));
     }
@@ -130,12 +132,12 @@ public class RoomServiceImpl implements RoomService {
     @Transactional
     public ResponseEntity<?> updateRoom(int id, UpdateRoomRequestDto requestDto) {
         if (requestDto == null) {
-            return ResponseEntity.badRequest().body("Request body is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
         }
 
         Optional<Room> optionalRoom = roomRepository.findById(id);
         if (optionalRoom.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Room not found with id: " + id);
+            throw new ResourceNotFoundException("Room not found with id: " + id);
         }
 
         Room room = optionalRoom.get();
@@ -145,9 +147,9 @@ public class RoomServiceImpl implements RoomService {
             try {
                 resolvedHotel = resolveHotel(requestDto.getHotelId(), requestDto.getHotelName());
             } catch (IllegalArgumentException exception) {
-                return ResponseEntity.badRequest().body(exception.getMessage());
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
             } catch (IllegalStateException exception) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getMessage());
+                throw new ResourceNotFoundException(exception.getMessage());
             }
             room.setHotel(resolvedHotel);
         }
@@ -155,7 +157,7 @@ public class RoomServiceImpl implements RoomService {
         if (requestDto.getRoomType() != null) {
             String roomType = trimOrNull(requestDto.getRoomType());
             if (roomType == null) {
-                return ResponseEntity.badRequest().body("roomType cannot be blank");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roomType cannot be blank");
             }
             room.setRoomType(roomType);
         }
@@ -166,7 +168,7 @@ public class RoomServiceImpl implements RoomService {
 
         if (requestDto.getPrice() != null) {
             if (!isValidPrice(requestDto.getPrice())) {
-                return ResponseEntity.badRequest().body("price must be greater than 0");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "price must be greater than 0");
             }
             room.setPrice(requestDto.getPrice());
         }
@@ -199,9 +201,9 @@ public class RoomServiceImpl implements RoomService {
                 room.setPhotoPaths(allPhotos);
             }
         } catch (IllegalArgumentException exception) {
-            return ResponseEntity.badRequest().body(exception.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
         } catch (IllegalStateException exception) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save room photos");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save room photos");
         }
 
         Room updated = roomRepository.save(room);
@@ -218,7 +220,7 @@ public class RoomServiceImpl implements RoomService {
     public ResponseEntity<?> deleteRoom(int id) {
         Optional<Room> optionalRoom = roomRepository.findById(id);
         if (optionalRoom.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Room not found with id: " + id);
+            throw new ResourceNotFoundException("Room not found with id: " + id);
         }
 
         Room room = optionalRoom.get();
@@ -237,7 +239,7 @@ public class RoomServiceImpl implements RoomService {
             MediaType mediaType = resolveMediaType(filename);
             return ResponseEntity.ok().contentType(mediaType).body(resource);
         } catch (IllegalArgumentException exception) {
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("Room photo not found");
         }
     }
 
@@ -354,3 +356,4 @@ public class RoomServiceImpl implements RoomService {
         return price != null && price.compareTo(BigDecimal.ZERO) > 0;
     }
 }
+

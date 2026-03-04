@@ -1,5 +1,6 @@
 package com.serviceImpl;
 
+import com.exception.ResourceNotFoundException;
 import com.dto.*;
 import com.entity.Hotel;
 import com.entity.Review;
@@ -23,6 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,15 +76,15 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public ResponseEntity<?> updateUserAccess(int userId, AdminUpdateUserAccessRequestDto requestDto) {
         if (requestDto == null) {
-            return ResponseEntity.badRequest().body("Request body is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
         }
         if (requestDto.getRole() == null && requestDto.getStatus() == null) {
-            return ResponseEntity.badRequest().body("At least one of role or status is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one of role or status is required");
         }
 
         Optional<User> optionalUser = userRepository.findById(userId);
         if (optionalUser.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with id: " + userId);
+            throw new ResourceNotFoundException("User not found with id: " + userId);
         }
 
         User user = optionalUser.get();
@@ -103,7 +105,7 @@ public class AdminServiceImpl implements AdminService {
     public ResponseEntity<?> deleteUser(int userId, boolean hardDelete, String deletedBy) {
         Optional<User> optionalUser = userRepository.findById(userId);
         if (optionalUser.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with id: " + userId);
+            throw new ResourceNotFoundException("User not found with id: " + userId);
         }
 
         User user = optionalUser.get();
@@ -151,7 +153,7 @@ public class AdminServiceImpl implements AdminService {
     public ResponseEntity<?> deleteHotel(int hotelId, String deletedBy) {
         Optional<Hotel> optionalHotel = hotelRepository.findById(hotelId);
         if (optionalHotel.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Hotel not found with id: " + hotelId);
+            throw new ResourceNotFoundException("Hotel not found with id: " + hotelId);
         }
 
         Hotel hotel = optionalHotel.get();
@@ -193,12 +195,12 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public ResponseEntity<?> updateRoomStatus(int roomId, AdminUpdateRoomStatusRequestDto requestDto) {
         if (requestDto == null || requestDto.getAvailable() == null) {
-            return ResponseEntity.badRequest().body("available is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "available is required");
         }
 
         Optional<Room> optionalRoom = roomRepository.findById(roomId);
         if (optionalRoom.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Room not found with id: " + roomId);
+            throw new ResourceNotFoundException("Room not found with id: " + roomId);
         }
 
         Room room = optionalRoom.get();
@@ -214,7 +216,7 @@ public class AdminServiceImpl implements AdminService {
     public ResponseEntity<?> deleteRoom(int roomId) {
         Optional<Room> optionalRoom = roomRepository.findById(roomId);
         if (optionalRoom.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Room not found with id: " + roomId);
+            throw new ResourceNotFoundException("Room not found with id: " + roomId);
         }
 
         Room room = optionalRoom.get();
@@ -431,4 +433,5 @@ public class AdminServiceImpl implements AdminService {
         return value == null || value.trim().isEmpty();
     }
 }
+
 

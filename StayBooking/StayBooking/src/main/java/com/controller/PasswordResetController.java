@@ -3,6 +3,7 @@ package com.controller;
 import com.dto.ForgotPasswordRequestDto;
 import com.dto.ResetPasswordRequestDto;
 import com.service.PasswordResetService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,12 +19,12 @@ public class PasswordResetController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequestDto forgotPasswordRequestDto) {
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDto forgotPasswordRequestDto) {
         return passwordResetService.requestPasswordResetOtp(forgotPasswordRequestDto);
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequestDto resetPasswordRequestDto) {
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequestDto resetPasswordRequestDto) {
         return passwordResetService.resetPasswordWithOtp(resetPasswordRequestDto);
     }
 }
